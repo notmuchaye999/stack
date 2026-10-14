@@ -1,7 +1,8 @@
 // @ts-check
 /* The 5 stages, and the split Stack suggests for each one. */
+import { BK } from './util.js';
 import { money, kmoney } from './format.js';
-import { debtNow, savedNow, investedNow, effRate, order } from './balances.js';
+import { debtNow, savedNow, investedNow, effRate, order, sumPct } from './balances.js';
 
 /** @typedef {import('./state.js').State} State @typedef {import('./state.js').Debt} Debt @typedef {import('./state.js').Split} Split */
 
@@ -38,9 +39,23 @@ export function stageInfo(S, P) {
  * @param {State} S @param {{ n: number }} st @returns {Split}
  */
 export function suggest(S, st) {
+  // With spending under 5% in stages 2–3, one pass can't be told apart from its own result, so settle on the
+  // answer that stays the same when the rules run again (one extra pass at most). Normal splits are stable first time.
+  let p = suggestOnce(S, st);
+  for (let i = 0; i < 4; i++) {
+    const q = suggestOnce(Object.assign({}, S, { pct: p }), st);
+    if (BK.every(k => q[k] === p[k])) break;
+    p = q;
+  }
+  return p;
+}
+
+/** @param {State} S @param {{ n: number }} st @returns {Split} */
+function suggestOnce(S, st) {
   // Spending plus that slice is treated as one pool, so applying the suggestion twice gives the same answer.
+  // 30% is only used when your whole split is blank; a deliberate 0% spending stays 0%. Capped at 100% so no share goes negative.
   const early = st.n <= 3;
-  const sp = S.pct.spend > 0 ? S.pct.spend + (early ? Math.min(S.pct.invest, 5) : 0) : 30, R = 100 - sp;
+  const sp = Math.min(100, sumPct(S) > 0 ? S.pct.spend + (early ? Math.min(S.pct.invest, 5) : 0) : 30), R = 100 - sp;
   const hasDebt = S.debts.some(d => debtNow(S, d) > 0.005);
   const inv = early ? Math.min(5, sp) : 0;
   const p = { spend: sp - inv, debt: 0, save: 0, invest: inv };
@@ -50,6 +65,12 @@ export function suggest(S, st) {
   else if (st.n === 4) { p.save = Math.round(R / 2); p.invest = R - p.save; }
   else p.invest = R;
   // Investing always beats savings: whenever both are in play, investing takes two-thirds of their combined share.
-  if (p.save > 0) { const pool = p.save + p.invest; p.invest = Math.round(pool * 2 / 3); p.save = pool - p.invest; }
+  // Rounding can't make it a tie, and in stages 1–3 it never drops below the 5% slice.
+  if (p.save > 0) {
+    const pool = p.save + p.invest;
+    p.invest = Math.max(inv, Math.round(pool * 2 / 3));
+    if (p.invest * 2 <= pool) p.invest = Math.floor(pool / 2) + 1;
+    p.save = pool - p.invest;
+  }
   return p;
 }
