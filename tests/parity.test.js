@@ -9,6 +9,8 @@ import * as P_util from '../app/src/core/util.js';
 import * as P_ from '../app/src/core/projection.js';
 import * as St from '../app/src/core/stages.js';
 import * as K from '../app/src/core/stacks.js';
+import * as CSV from '../app/src/core/csv.js';
+import { readFileSync } from 'node:fs';
 
 const json = v => JSON.parse(JSON.stringify(v ?? null));
 let P, states;
@@ -63,4 +65,12 @@ describe('stacking a pay matches the prototype', () => {
   same('plan vs what you did, for every stacked pay',
     'S.stacks.map(s => (({ todos, spent, doneN, complete }) => ({ todos, spent, doneN, complete }))(stackItems(s)))',
     S => S.stacks.map(s => (({ todos, spent, doneN, complete }) => ({ todos, spent, doneN, complete }))(K.stackItems(S, s))));
+});
+
+describe('reading CSV statements matches the prototype', () => {
+  it('every bank fixture and the sample statement', () => {
+    const texts = ['commbank', 'westpac', 'nab', 'ing'].map(b => readFileSync(new URL(`./fixtures/${b}.csv`, import.meta.url), 'utf8'));
+    texts.push(P.run('sampleCSV()'));
+    for (const t of texts) expect(CSV.readStatement(t)).toEqual(P.run(`readStatement(${JSON.stringify(t)})`));
+  });
 });
