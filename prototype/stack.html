@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Stack</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Stack">
@@ -7,31 +8,32 @@
 <style>
 /* Layout: phone-width app column, iOS-style grouped cards, 5-tab bar with a raised Stack button, bottom sheets for every form. */
 :root{
-  --bg:#ECEFF3; --surface:#FFFFFF; --sunk:#F2F4F7; --ink:#121820; --muted:#5A6573; --line:#E1E6EC; --knob:#FFFFFF;
-  --bar:rgba(255,255,255,.88); --scrim:rgba(10,14,20,.38);
-  --accent:#F2B705; --accent-ink:#121820;
-  --c-pay:#121820; --c-buy:#7C5BC4; --c-bills:#7B8896; --c-spend:#3E5F91; --c-debt:#C6453A; --c-save:#C98500; --c-invest:#23845A;
-  --bad:#B23A30; --bad-bg:#FBE8E6; --warn:#8A5800; --warn-bg:#FCF0D6; --good:#1D7350; --good-bg:#E1F2E9;
+  /* Washi beige and walnut brown for grounding; green = growth, muted red = stop and think, soft pink = calm spending, blue = savings. */
+  --bg:#EFE8DC; --surface:#FBF8F2; --sunk:#F2EBDF; --ink:#2B2622; --muted:#75695D; --line:#E3D9CA; --knob:#FFFFFF;
+  --bar:rgba(251,248,242,.9); --scrim:rgba(43,38,34,.35);
+  --accent:#7B5135; --accent-ink:#FBF8F2;
+  --c-pay:#2B2622; --c-buy:#B98236; --c-bills:#A68A63; --c-spend:#B8767F; --c-debt:#A04A3C; --c-save:#4A6B8A; --c-invest:#5E7D4A;
+  --bad:#9A3B2F; --bad-bg:#F3E2DC; --warn:#85601F; --warn-bg:#F3E9D4; --good:#4C6B39; --good-bg:#E4EAD8;
   --f-display:"Archivo","Arial Black",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0B0E12; --surface:#161B22; --sunk:#1D232C; --ink:#E6EAF0; --muted:#8B95A3; --line:#262E38; --knob:#FFFFFF;
-    --bar:rgba(22,27,34,.88); --scrim:rgba(0,0,0,.55);
-    --accent:#F2B705; --accent-ink:#121820;
-    --c-pay:#E6EAF0; --c-buy:#AC8EEA; --c-bills:#8D9AA9; --c-spend:#7FA0D6; --c-debt:#EC7B6F; --c-save:#EDB23C; --c-invest:#4FC08A;
-    --bad:#F08A80; --bad-bg:#3A1E1B; --warn:#F0BE5A; --warn-bg:#3A2E14; --good:#5CCB96; --good-bg:#14302A;
+    --bg:#1A1714; --surface:#24201C; --sunk:#2D2823; --ink:#EDE5D8; --muted:#A3978A; --line:#3A332C; --knob:#FFFFFF;
+    --bar:rgba(36,32,28,.9); --scrim:rgba(0,0,0,.55);
+    --accent:#C9A074; --accent-ink:#1A1714;
+    --c-pay:#EDE5D8; --c-buy:#D6A55E; --c-bills:#B49A78; --c-spend:#D9A1A8; --c-debt:#D08272; --c-save:#8FAECB; --c-invest:#97B47E;
+    --bad:#E08A7C; --bad-bg:#3A2420; --warn:#E2B76A; --warn-bg:#382E1E; --good:#A3C28A; --good-bg:#26301F;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0B0E12; --surface:#161B22; --sunk:#1D232C; --ink:#E6EAF0; --muted:#8B95A3; --line:#262E38; --knob:#FFFFFF;
-  --bar:rgba(22,27,34,.88); --scrim:rgba(0,0,0,.55);
-  --accent:#F2B705; --accent-ink:#121820;
-  --c-pay:#E6EAF0; --c-buy:#AC8EEA; --c-bills:#8D9AA9; --c-spend:#7FA0D6; --c-debt:#EC7B6F; --c-save:#EDB23C; --c-invest:#4FC08A;
-  --bad:#F08A80; --bad-bg:#3A1E1B; --warn:#F0BE5A; --warn-bg:#3A2E14; --good:#5CCB96; --good-bg:#14302A;
+  --bg:#1A1714; --surface:#24201C; --sunk:#2D2823; --ink:#EDE5D8; --muted:#A3978A; --line:#3A332C; --knob:#FFFFFF;
+  --bar:rgba(36,32,28,.9); --scrim:rgba(0,0,0,.55);
+  --accent:#C9A074; --accent-ink:#1A1714;
+  --c-pay:#EDE5D8; --c-buy:#D6A55E; --c-bills:#B49A78; --c-spend:#D9A1A8; --c-debt:#D08272; --c-save:#8FAECB; --c-invest:#97B47E;
+  --bad:#E08A7C; --bad-bg:#3A2420; --warn:#E2B76A; --warn-bg:#382E1E; --good:#A3C28A; --good-bg:#26301F;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -266,7 +268,7 @@ button.pace{display:block;width:100%;border:0;text-align:left;cursor:pointer;fon
 .tabbar svg.ti{width:44px;height:28px;padding:3px 10px;border-radius:9px}
 .tabbar button[aria-current="page"]{color:var(--ink)}
 .tabbar button[aria-current="page"] svg.ti{background:var(--sunk)}
-.tb-mid .ic{width:54px;height:46px;border-radius:15px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-20px;box-shadow:0 6px 16px rgba(18,24,32,.22)}
+.tb-mid .ic{width:54px;height:46px;border-radius:15px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-20px;box-shadow:0 6px 16px rgba(43,38,34,.25)}
 /* sheet */
 .scrim{position:fixed;inset:0;background:var(--scrim);z-index:30}
 .sheet{position:fixed;left:0;right:0;bottom:0;margin-inline:auto;max-width:480px;max-height:90%;overflow-y:auto;background:var(--surface);border-radius:18px 18px 0 0;padding:6px 16px calc(22px + env(safe-area-inset-bottom,0px));z-index:31;transform:translateY(100%);transition:transform .22s ease}
@@ -412,7 +414,6 @@ button.pace{display:block;width:100%;border:0;text-align:left;cursor:pointer;fon
     <div class="grouped">
       <button class="row btn-row" type="button" data-act="import">Import a statement</button>
       <button class="row btn-row danger" type="button" data-act="drop-imports" id="drop-imports" data-label="Remove imported transactions" data-armed-label="Tap again to remove them" hidden>Remove imported transactions</button>
-      <button class="row btn-row" type="button" data-act="copy-data">Copy my data (to move it to the app)</button>
       <button class="row btn-row" type="button" data-act="sample">Load sample data</button>
       <button class="row btn-row danger" type="button" data-act="clear" data-label="Clear everything" data-armed-label="Tap again to clear everything">Clear everything</button>
     </div>
@@ -1345,10 +1346,10 @@ function renderBills(D) {
       return `<button class="row" type="button" data-act="buy" data-id="${b.id}"><span class="grow"><b>${esc(b.name)}</b><span class="muted small" style="margin:0">${done ? 'Bought' : `By ${fmtDate(b.by)} · ${money(Math.min(buyLeft(b), buyPerPay(b, today())))} a pay`}</span>${done ? '<span class="badge ok">Done</span>' : ''}</span><span class="num">${money(b.cost)}</span>${CHEV}</button>`;
     }).join('') : '<p class="empty">Nothing planned yet.</p>';
   } else if (ui.seg === 'bills') {
-    const share = L.incM > 0 ? Math.round(L.billsM / L.incM * 100) : 0;
-    $('#bd-sum').innerHTML = `<p class="eyebrow">Bills</p><p class="sum-big">${money(L.billsM)}<small> a month</small></p><p class="muted small">${L.incM > 0 ? share + '% of your pay · ' : ''}${money(L.billsM * 12 / ppy())} set aside each ${S.freq}</p>`;
+    const share = L.incM > 0 ? Math.round(L.billsM / L.incM * 100) : 0, unit = { week: '/wk', fortnight: '/fn', month: '/mo' }[S.freq];
+    $('#bd-sum').innerHTML = `<p class="eyebrow">Bills</p><p class="sum-big">${money(perPay(L.billsM))}<small> ${FREQ[S.freq].per}</small></p><p class="muted small">Set aside from each pay${L.incM > 0 ? ` · ${share}% of your pay` : ''}. About ${money(L.billsM)} a month on average.</p>`;
     $('#bd-list').innerHTML = S.bills.length ? [...S.bills].sort((a, b) => monthly(b.amount, b.every) - monthly(a.amount, a.every)).map(b =>
-      `<button class="row" type="button" data-act="bill" data-id="${b.id}"><span class="grow"><b>${esc(b.name)}</b><span class="muted small" style="margin:0">${money(b.amount)} ${FREQ[b.every].per}</span></span><span class="num">${money(monthly(b.amount, b.every))}<small>/mo</small></span>${CHEV}</button>`).join('')
+      `<button class="row" type="button" data-act="bill" data-id="${b.id}"><span class="grow"><b>${esc(b.name)}</b><span class="muted small" style="margin:0">${money(b.amount)} ${FREQ[b.every].per}</span></span><span class="num">${money(perPay(monthly(b.amount, b.every)))}<small>${unit}</small></span>${CHEV}</button>`).join('')
       : '<p class="empty">No bills yet. Add rent or board, phone, insurance, rego and subscriptions.</p>';
   } else {
     const P = D.P, left = debtTotal();
@@ -1965,12 +1966,6 @@ document.addEventListener('click', e => {
       break;
     }
     case 'split': splitSheet(a.dataset.stack); break;
-    case 'copy-data': {
-      const txt = JSON.stringify(S);
-      const show = () => { openSheet('Your data', `<div class="form"><textarea id="f-json" readonly style="width:100%;height:220px;border:0;border-radius:10px;padding:10px;background:var(--sunk);color:var(--ink);font:12px var(--f-num)">${esc(txt)}</textarea><p class="muted small" style="margin:0">Select all of it and copy. Everything you've entered is in there.</p></div>`); const t = $('#f-json'); t.focus(); t.select(); };
-      try { navigator.clipboard.writeText(txt).then(() => toast('Copied. Paste it into the new app when it asks.'), show); } catch (e) { show(); }
-      break;
-    }
     case 'move': moveDetail(id); break;
     case 'pay': payDetail(id); break;
     case 'bill': billSheet(id); break;
@@ -2010,3 +2005,5 @@ keypad($('#pay-keys'), payPad);
 fillPlanInputs(); fillPay();
 renderAll();
 </script>
+
+</body></html>
