@@ -83,6 +83,25 @@ document.addEventListener('click', e => {
     case 'did-all': {
       const n = didAll(S, a.dataset.stack, !!a.dataset.past);
       save(); renderAll();
+
+/* ---------- offline and updates ---------- */
+/* The service worker keeps Stack working offline. It's skipped on localhost (so edits show straight away while
+   developing) unless the address has ?sw in it. */
+if ('serviceWorker' in navigator && (location.hostname !== 'localhost' || location.search.includes('sw'))) {
+  const btn = $('#update');
+  const offer = w => { btn.hidden = false; requestAnimationFrame(() => btn.classList.add('show')); btn.onclick = () => w.postMessage('update'); };
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
+    });
+    // Look for a new version whenever you come back to the app.
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => {});
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloading) { reloading = true; location.reload(); } });
+}
       const pm = a.closest('#sheet') && S.moves.find(m => m.type === 'pay' && m.stack === a.dataset.stack);
       if (pm) payDetail(pm.id);
       toast(n ? `Recorded ${n} transfer${n === 1 ? '' : 's'} as planned` : 'Nothing left to record');
@@ -129,3 +148,22 @@ buildSplit();
 keypad($('#pay-keys'), payPad);
 fillPlanInputs(); fillPay();
 renderAll();
+
+/* ---------- offline and updates ---------- */
+/* The service worker keeps Stack working offline. It's skipped on localhost (so edits show straight away while
+   developing) unless the address has ?sw in it. */
+if ('serviceWorker' in navigator && (location.hostname !== 'localhost' || location.search.includes('sw'))) {
+  const btn = $('#update');
+  const offer = w => { btn.hidden = false; requestAnimationFrame(() => btn.classList.add('show')); btn.onclick = () => w.postMessage('update'); };
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
+    });
+    // Look for a new version whenever you come back to the app.
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => {});
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloading) { reloading = true; location.reload(); } });
+}
