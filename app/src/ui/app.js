@@ -1,6 +1,6 @@
 /* Stack starts here: load your data, draw the screens, and handle every tap. */
 import { today, fmtDate, blank, sampleState, stackItems, didAll, stackPay, dropImports } from '../core/index.js';
-import { loadState } from '../storage.js';
+import { loadState, onStorageProblem, askToKeep } from '../storage.js';
 import { app, ui, save } from './store.js';
 import { $, arm, closeSheet, toast } from './dom.js';
 import { NF, keypad, press, toStr, numpad, closePad, padDone, padSt } from './numpad.js';
@@ -11,6 +11,7 @@ import { billSheet, debtSheet, buySheet, recSheet } from './forms.js';
 import { moveDetail, payDetail, splitSheet, stagesSheet, tipsSheet } from './details.js';
 import { importSheet, runSample, commitImport, toggleRow, relabelRow, readFile } from './importer.js';
 import { balance, useSuggest } from './actions.js';
+import { exportSheet, importDataSheet } from './data.js';
 
 /* ---------- typing and keys ---------- */
 document.addEventListener('input', e => {
@@ -98,6 +99,8 @@ document.addEventListener('click', e => {
     case 'suggest': useSuggest(); break;
     case 'usual': payPad.str = toStr(S.pay, 2); payPad.onChange(payPad.str); break;
     case 'stack-new': ui.stackNew = true; fillPay(); renderAll(); window.scrollTo(0, 0); break;
+    case 'export': exportSheet(); break;
+    case 'import-data': importDataSheet(); break;
     case 'sample': app.S = sampleState(); ui.animated = false; save(); fillPlanInputs(); renderAll(); toast('Sample data loaded'); break;
     case 'clear': arm(a, () => { app.S = blank(); ui.stackNew = false; save(); fillPlanInputs(); fillPay(); renderAll(); toast('Everything cleared'); }); break;
     case 'drop-imports': arm(a, () => {
@@ -118,7 +121,10 @@ $('#pay-save').addEventListener('click', () => {
 });
 
 /* ---------- start ---------- */
+let warned = false;
+onStorageProblem(() => { if (!warned) { warned = true; toast("This browser won't let Stack use its storage. Export your data now and then."); } });
 app.S = await loadState();
+askToKeep();
 buildSplit();
 keypad($('#pay-keys'), payPad);
 fillPlanInputs(); fillPay();
