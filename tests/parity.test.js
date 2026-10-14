@@ -5,8 +5,10 @@ import { loadPrototype } from './helpers/prototype.js';
 import { buildStates } from './helpers/states.js';
 import * as B from '../app/src/core/balances.js';
 import { today } from '../app/src/core/util.js';
+import * as P_util from '../app/src/core/util.js';
 import * as P_ from '../app/src/core/projection.js';
 import * as St from '../app/src/core/stages.js';
+import * as K from '../app/src/core/stacks.js';
 
 const json = v => JSON.parse(JSON.stringify(v ?? null));
 let P, states;
@@ -51,4 +53,14 @@ describe('stages and the suggested split match the prototype', () => {
     S => { const { tone: t, ...st } = St.stageInfo(S, P_.project(S)); return Object.assign(st, { color: t }); });
   same('suggest', 'suggest(stageInfo(project()))', S => St.suggest(S, St.stageInfo(S, P_.project(S))));
   same('suggest for every stage', '[1,2,3,4,5].map(n => suggest({ n }))', S => [1, 2, 3, 4, 5].map(n => St.suggest(S, { n })));
+});
+
+describe('stacking a pay matches the prototype', () => {
+  const noIds = s => s && Object.assign({}, s, { id: 'x', t: 0 });
+  same('makeStack for a few amounts and dates',
+    "[300, 1385.2, 2600, 5000].map(a => (s => Object.assign(s, { id: 'x', t: 0 }))(makeStack(a, addDays(today(), -2))))",
+    S => [300, 1385.2, 2600, 5000].map(a => noIds(K.makeStack(S, a, P_util.addDays(P_util.today(), -2)))));
+  same('plan vs what you did, for every stacked pay',
+    'S.stacks.map(s => (({ todos, spent, doneN, complete }) => ({ todos, spent, doneN, complete }))(stackItems(s)))',
+    S => S.stacks.map(s => (({ todos, spent, doneN, complete }) => ({ todos, spent, doneN, complete }))(K.stackItems(S, s))));
 });
