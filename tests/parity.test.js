@@ -5,6 +5,7 @@ import { loadPrototype } from './helpers/prototype.js';
 import { buildStates } from './helpers/states.js';
 import * as B from '../app/src/core/balances.js';
 import { today } from '../app/src/core/util.js';
+import * as P_ from '../app/src/core/projection.js';
 
 const json = v => JSON.parse(JSON.stringify(v ?? null));
 let P, states;
@@ -30,4 +31,16 @@ describe('balances match the prototype', () => {
   same('split in use', 'effPct()', S => B.effPct(S));
   same('planned buys', 'openBuys().map(b => [b.id, buyLeft(b), buyPerPay(b, today())]).concat([buysM()])',
     S => B.openBuys(S).map(b => [b.id, B.buyLeft(S, b), B.buyPerPay(S, b, today())]).concat([B.buysM(S)]));
+});
+
+describe('the countdown matches the prototype', () => {
+  same('levels', 'levels()', S => P_.levels(S));
+  same('cycles', '[cycles(), cycles(null, 250)]', S => [P_.cycles(S), P_.cycles(S, null, 250)]);
+  same('costs', '[costs(), costs({ plan: true })]', S => [P_.costs(S), P_.costs(S, { plan: true })]);
+  same('project', 'project()', S => P_.project(S));
+  same('project from the plan', 'project({ plan: true })', S => P_.project(S, { plan: true }));
+  same('every entry\'s effect on the FI date', 'S.moves.map(m => impactOf(m, project().fi))',
+    S => S.moves.map(m => P_.impactOf(S, m, P_.project(S).fi)));
+  same('what a new entry would do', "(BASE = project().fi, [hypo('spend', 80), hypo('saved', 200), hypo('invested', 500), hypo('debt', 300, S.debts[0] && S.debts[0].id)])",
+    S => { const b = P_.project(S).fi; return [P_.hypo(S, 'spend', 80, null, b), P_.hypo(S, 'saved', 200, null, b), P_.hypo(S, 'invested', 500, null, b), P_.hypo(S, 'debt', 300, S.debts[0] && S.debts[0].id, b)]; });
 });
