@@ -10,6 +10,8 @@ import * as P_ from '../app/src/core/projection.js';
 import * as St from '../app/src/core/stages.js';
 import * as K from '../app/src/core/stacks.js';
 import * as CSV from '../app/src/core/csv.js';
+import * as Cat from '../app/src/core/categorize.js';
+import { sampleState, sampleCSV } from '../app/src/core/sample.js';
 import { readFileSync } from 'node:fs';
 
 const json = v => JSON.parse(JSON.stringify(v ?? null));
@@ -72,5 +74,28 @@ describe('reading CSV statements matches the prototype', () => {
     const texts = ['commbank', 'westpac', 'nab', 'ing'].map(b => readFileSync(new URL(`./fixtures/${b}.csv`, import.meta.url), 'utf8'));
     texts.push(P.run('sampleCSV()'));
     for (const t of texts) expect(CSV.readStatement(t)).toEqual(P.run(`readStatement(${JSON.stringify(t)})`));
+  });
+});
+
+describe('statement import matches the prototype', () => {
+  const texts = () => ['commbank', 'westpac', 'nab', 'ing'].map(b => readFileSync(new URL(`./fixtures/${b}.csv`, import.meta.url), 'utf8')).concat([P.run('sampleCSV()')]);
+  it('labels, dedupe and the review rows', () => {
+    for (const [label, S] of Object.entries(states)) for (const t of texts()) {
+      P.setState(S);
+      const old = P.run(`prepImport(readStatement(${JSON.stringify(t)}))`);
+      expect(Cat.prepImport(JSON.parse(JSON.stringify(S)), CSV.readStatement(t)), label).toEqual(old);
+    }
+  });
+  it('the sample statement and sample data', () => {
+    expect(sampleCSV()).toBe(P.run('sampleCSV()'));
+    // Ids are random, so swap them for their order of appearance before comparing.
+    const strip = S => {
+      let txt = JSON.stringify(S), n = 0;
+      const ids = [...S.bills, ...S.debts, ...S.buys, ...S.stacks, ...S.moves].map(x => x.id);
+      for (const id of ids) txt = txt.split(`"${id}"`).join(`"id${n++}"`);
+      const o = JSON.parse(txt); o.stacks.forEach(s => { s.t = 0; }); return o;
+    };
+    P.run('(loadSample(), 0)');
+    expect(strip(sampleState())).toEqual(strip(P.getState()));
   });
 });
