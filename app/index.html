@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Stack</title>
+  <meta name="description" content="Stack every pay: bills, debts, savings and investing, counting down to financial independence. Works offline; your data stays on your phone.">
+  <meta name="theme-color" content="#EFE8DC" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1A1714" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Stack">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800;125,900&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="src/ui/app.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- HOME -->
+    <section class="tab" id="tab-home">
+      <header class="topbar">
+        <div class="brand">
+          <svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true">
+            <rect x="3" y="20" width="24" height="7" rx="1.5" style="fill:var(--c-spend)"/>
+            <rect x="6" y="11.5" width="18" height="7" rx="1.5" style="fill:var(--c-debt)"/>
+            <rect x="9" y="3" width="12" height="7" rx="1.5" style="fill:var(--c-invest)"/>
+          </svg>
+          <span class="word">STACK</span>
+          <span class="tag" id="h-sample" hidden>Sample</span>
+        </div>
+        <div class="home-act"><button class="link" type="button" data-act="clear" data-label="Reset" data-armed-label="Tap again to reset">Reset</button>
+        <button class="pill-btn" type="button" data-go="plan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Plan</button></div>
+      </header>
+      <div class="card count" id="h-count"></div>
+      <button class="btn primary big stack-btn" type="button" data-go="stack"><svg width="22" height="22" viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="20" width="24" height="7" rx="1.5" fill="currentColor"/><rect x="6" y="11.5" width="18" height="7" rx="1.5" fill="currentColor"/><rect x="9" y="3" width="12" height="7" rx="1.5" fill="currentColor"/></svg>Stack</button>
+      <div id="h-tips"></div>
+      <div class="card" id="h-pay"></div>
+      <div class="card" id="h-stage"></div>
+      <h2 class="group-h">Balances</h2>
+      <div class="grouped" id="h-bal"></div>
+    </section>
+
+    <!-- SPENT -->
+    <section class="tab" id="tab-spent" hidden>
+      <h1 class="large">Spent</h1>
+      <div class="card" id="sp-sum"></div>
+      <div class="duo">
+        <button class="btn primary" type="button" data-act="add-spend">Add a spend</button>
+        <button class="btn" type="button" data-act="import">Import statement</button>
+      </div>
+      <h2 class="group-h">History</h2>
+      <div class="grouped" id="sp-list"></div>
+    </section>
+
+    <!-- STACK -->
+    <section class="tab" id="tab-stack" hidden>
+      <div class="tab" id="stk-list"></div>
+      <div class="tab" id="stk-new">
+        <h1 class="large">Stack your pay</h1>
+        <div class="card">
+          <p class="lbl" style="margin:0">How much landed in your account?</p>
+          <p class="pay-amt" aria-live="polite"><span>$</span><b id="pay-amt">0</b></p>
+          <div class="paybar" id="pay-bar"></div>
+          <div class="pay-meta"><button class="chipbtn" type="button" data-act="usual" id="pay-usual" hidden></button><label class="vh" for="pay-date">Paid on</label><input id="pay-date" class="date" type="date"></div>
+          <div class="keys" id="pay-keys"></div>
+          <p class="muted small" id="pay-note"></p>
+        </div>
+        <button class="btn primary big" id="pay-save" type="button">Stack it</button>
+        <div class="card" id="pay-preview"></div>
+      </div>
+      <h2 class="group-h">Pays</h2>
+      <div class="grouped" id="pay-hist"></div>
+    </section>
+
+    <!-- SAVED -->
+    <section class="tab" id="tab-saved" hidden>
+      <h1 class="large">Saved</h1>
+      <div class="card" id="sv-save"></div>
+      <div class="card" id="sv-inv"></div>
+      <div class="trio">
+        <button class="btn" type="button" data-act="rec" data-t="saved">+ Savings</button>
+        <button class="btn" type="button" data-act="rec" data-t="invested">+ Invested</button>
+        <button class="btn" type="button" data-act="rec" data-t="debt">+ Debt paid</button>
+      </div>
+      <button class="btn wide" type="button" data-act="import" style="margin-top:0">Import statement</button>
+      <h2 class="group-h">History</h2>
+      <div class="grouped" id="sv-list"></div>
+    </section>
+
+    <!-- BILLS -->
+    <section class="tab" id="tab-bills" hidden>
+      <h1 class="large">Bills &amp; debts</h1>
+      <div class="seg" role="tablist" aria-label="Bills or debts">
+        <button type="button" role="tab" data-seg="bills">Bills</button>
+        <button type="button" role="tab" data-seg="debts">Debts</button>
+        <button type="button" role="tab" data-seg="buys">To buy</button>
+      </div>
+      <div class="card" id="bd-sum"></div>
+      <div class="grouped" id="bd-list"></div>
+      <button class="btn wide" type="button" data-act="add" id="bd-add" style="margin-top:0">Add a bill</button>
+    </section>
+
+    <!-- PLAN -->
+    <section class="tab" id="tab-plan" hidden>
+      <button class="back" type="button" data-go="home"><svg width="9" height="15" viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6.5 1.5-5 5 5 5"/></svg>Home</button>
+      <h1 class="large">Plan</h1>
+      <div class="card">
+        <p class="card-h">Your split</p>
+        <p class="muted small" id="p-rem"></p>
+        <svg class="stack-svg" id="p-stack" viewBox="0 0 300 330" role="img" aria-label="Your monthly pay as stacked layers"></svg>
+        <div class="split" id="p-split"></div>
+        <p class="pill" id="p-total"></p>
+        <button class="btn wide" type="button" data-act="balance" id="p-balance" hidden>Balance to 100%</button>
+        <div class="suggest" id="p-suggest"></div>
+      </div>
+      <div class="card"><p class="card-h">Milestones</p><p class="muted small" id="p-miles-note"></p><ul class="miles" id="p-miles"></ul></div>
+      <div class="card">
+        <p class="card-h">Investments vs your FI number</p>
+        <p class="muted small" id="p-fi-note"></p>
+        <div class="fi-wrap" id="p-fi"></div>
+        <div class="fi-x" id="p-fi-x"></div>
+        <div class="legend" id="p-legend"></div>
+      </div>
+
+      <h2 class="group-h">Assumptions</h2>
+      <div class="grouped">
+        <div class="frow"><span>Usual pay</span><div class="ctl"><button class="nfield" type="button" data-n="pay" id="n-pay" aria-label="Usual pay"></button>
+          <select id="s-freq" aria-label="Pay frequency"><option value="week">weekly</option><option value="fortnight">fortnightly</option><option value="month">monthly</option></select></div></div>
+        <div class="frow"><span>Emergency fund target</span><button class="nfield" type="button" data-n="em" id="n-em" aria-label="Emergency fund target"></button></div>
+        <div class="frow"><span>Return after inflation</span><button class="nfield" type="button" data-n="ret" id="n-ret" aria-label="Return after inflation"></button></div>
+        <div class="frow"><span id="wr-l">Withdrawal rate</span><div class="seg" role="group" aria-labelledby="wr-l"><button type="button" data-wr="4">4%</button><button type="button" data-wr="3.5">3.5%</button></div></div>
+      </div>
+
+      <h2 class="group-h">Data</h2>
+      <div class="grouped">
+        <button class="row btn-row" type="button" data-act="import">Import a statement</button>
+        <button class="row btn-row danger" type="button" data-act="drop-imports" id="drop-imports" data-label="Remove imported transactions" data-armed-label="Tap again to remove them" hidden>Remove imported transactions</button>
+        <button class="row btn-row" type="button" data-act="export">Export my data</button>
+        <button class="row btn-row" type="button" data-act="import-data">Import data</button>
+        <button class="row btn-row" type="button" data-act="sample">Load sample data</button>
+        <button class="row btn-row danger" type="button" data-act="clear" data-label="Clear everything" data-armed-label="Tap again to clear everything">Clear everything</button>
+      </div>
+
+      <details class="maths">
+        <summary>How the maths works</summary>
+        <dl>
+          <div><dt>Stacking a pay</dt><dd>The bills actually due before your next pay stay in the account. Quarterly and yearly bills are saved up a little each pay instead. Then the repayments due before your next pay come out, then a share for planned buys. The rest is split by your percentages. Extra debt goes to the debt you picked to clear first, then overdrawn accounts, then whatever charges the most interest, then interest-free debts whose free period ends soonest.</dd></div>
+          <div><dt>Countdown</dt><dd>Works only from the pays you've entered: one pay, then the average of two, three and so on (up to the last 26). It averages what came in and what you spent across them. The pay you're in counts as its card budget until you spend more than that. Bills come from your bills list, so a yearly rego payment doesn't spike it.</dd></div>
+          <div><dt>Each month in the projection</dt><dd>Average pay minus bills, minimums, spending and any planned buys still to come goes to work in your split's proportions, rolling over as goals finish. If that's negative, the gap is added to what you owe and the countdown says Never. Interest is rate ÷ 12, except on interest-free debts until their end date. Investments grow at return ÷ 12. Today's dollars, super not counted.</dd></div>
+          <div><dt>FI number</dt><dd>(Bills + spending) × 12 ÷ withdrawal rate. 4% means × 25. Minimum repayments aren't counted because they end.</dd></div>
+          <div><dt>Days on each entry</dt><dd>The countdown worked out with that entry and without it. Spending inside a pay's card budget is already counted, so it barely moves it. Spending past it does. With only a few pays entered, each one carries a lot of weight, because the projection assumes every pay goes like them.</dd></div>
+          <div><dt>Balances</dt><dd>Savings and investments are the balance you set plus everything recorded since. Debts are the balance you entered minus payments recorded after it. Interest and growth aren't tracked between corrections, so correct them from your bank now and then.</dd></div>
+          <div><dt>Statements</dt><dd>PDF or CSV, read on this device. In a PDF, money in and out is told apart by the Debit and Credit columns, and checked against the running balance. Rows from earlier imports are left out. Rows matching something you already recorded by hand (same amount within 3 days) are marked and skipped.</dd></div>
+          <div><dt>Stages</dt><dd>1: overdrawn accounts back to $0. 2: $1,000 saved. 3: debts at 7% or more cleared. 4: emergency fund full. 5: investing.</dd></div>
+          <div><dt>Suggested split</dt><dd>Spending stays at your setting (30% if blank). The rest goes by stage. Investing always keeps a slice: through stages 1 to 3 it gets 5%, taken from Spending, so debt and savings aren't touched. Investing also always beats savings: whenever both are in the split, investing takes two-thirds of their combined share and savings one-third.</dd></div>
+        </dl>
+      </details>
+      <p class="foot">General information, not financial advice. Your data stays on this device. Background: NASA, ESA, Hubble.</p>
+    </section>
+  </div>
+
+  <nav class="tabbar" aria-label="Sections">
+    <div class="tabbar-in">
+      <button type="button" data-go="home" aria-current="page"><svg class="ti" viewBox="-10 -2 44 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
+      <button type="button" data-go="spent"><svg class="ti" viewBox="-10 -2 44 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg><span>Spent</span></button>
+      <button type="button" class="tb-mid" data-go="stack"><span class="ic"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="20" width="24" height="7" rx="1.5" fill="currentColor"/><rect x="6" y="11.5" width="18" height="7" rx="1.5" fill="currentColor"/><rect x="9" y="3" width="12" height="7" rx="1.5" fill="currentColor"/></svg></span><span>Stack</span></button>
+      <button type="button" data-go="saved"><svg class="ti" viewBox="-10 -2 44 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11m-4.5-4.5L12 14l4.5-4.5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg><span>Saved</span></button>
+      <button type="button" data-go="bills"><svg class="ti" viewBox="-10 -2 44 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg><span>Bills</span></button>
+    </div>
+  </nav>
+  <div class="scrim" id="scrim" hidden></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden></div>
+  <div class="scrim pad-scrim" id="pad-scrim" hidden></div>
+  <div class="sheet pad" id="pad" role="dialog" aria-modal="true" aria-labelledby="pad-label" hidden>
+    <div class="grab"></div>
+    <div class="sheet-head"><h2 id="pad-label"></h2><button class="link" type="button" data-pad="clear">Clear</button></div>
+    <p class="pad-val" id="pad-val" aria-live="polite"></p>
+    <div class="keys" id="pad-keys"></div>
+    <button class="btn primary big" type="button" data-pad="done" style="margin-top:12px">Done</button>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <input type="file" id="file" accept=".pdf,.csv,application/pdf,text/csv,text/plain" hidden>
+</body>
+</html>
