@@ -3,7 +3,7 @@
 import { BK, DPM, IMPACT_TYPES, today, daysBetween } from './util.js';
 import { effPct, ppy, monthly, debtNow, savedNow, investedNow, sumType, order, periodDays, openBuys, buyMonths, buyLeft } from './balances.js';
 
-/** @typedef {import('./state.js').State} State @typedef {import('./state.js').Move} Move @typedef {import('./state.js').MoveType} MoveType */
+/** @import { State, Move, MoveType } from './state.js' */
 
 /** Your plan in monthly amounts: usual pay, bills, minimums and what's left to split. @param {State} S */
 export function levels(S) {

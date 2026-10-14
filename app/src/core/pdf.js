@@ -5,9 +5,9 @@
 import { pad2 } from './util.js';
 import { MON, parseAmount } from './csv.js';
 
+/** @import { BankLine } from './csv.js' */
 /** @typedef {{ s: string, x: number, y?: number, w: number }} Piece  A piece of text and where it sits.
- *  @typedef {{ y: number, page: number, items: Piece[] }} Line
- *  @typedef {import('./csv.js').BankLine} BankLine */
+ *  @typedef {{ y: number, page: number, items: Piece[] }} Line */
 
 /**
  * The text of a PDF as lines of positioned pieces, top to bottom.

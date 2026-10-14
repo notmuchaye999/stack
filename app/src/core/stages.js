@@ -4,7 +4,7 @@ import { BK } from './util.js';
 import { money, kmoney } from './format.js';
 import { debtNow, savedNow, investedNow, effRate, order, sumPct } from './balances.js';
 
-/** @typedef {import('./state.js').State} State @typedef {import('./state.js').Debt} Debt @typedef {import('./state.js').Split} Split */
+/** @import { State, Debt, Split } from './state.js' */
 
 /**
  * @typedef {{ n: 1 | 2 | 3 | 4 | 5, name: string, tone: 'debt' | 'save' | 'invest', prog: number, detail: string, top?: Debt }} Stage

@@ -4,9 +4,9 @@
 import { uid, daysBetween } from './util.js';
 import { order, debtNow } from './balances.js';
 
-/** @typedef {import('./state.js').State} State @typedef {import('./state.js').Move} Move @typedef {import('./state.js').MoveType} MoveType
- *  @typedef {import('./csv.js').BankLine} BankLine
- *  @typedef {BankLine & { hash: string, key: string, type: MoveType, ref: string | null, dupe?: boolean, user?: boolean }} ImportRow */
+/** @import { State, Move, MoveType } from './state.js' */
+/** @import { BankLine } from './csv.js' */
+/** @typedef {BankLine & { hash: string, key: string, type: MoveType, ref: string | null, dupe?: boolean, user?: boolean }} ImportRow */
 
 const STOP = new Set(['CARD', 'BANK', 'ACCOUNT', 'ACCT', 'PAYMENT', 'TRANSFER', 'DIRECT', 'DEBIT', 'CREDIT', 'BILL', 'BILLS', 'MONTHLY', 'WEEKLY', 'OVERDRAWN', 'SAVINGS', 'FROM', 'WITH', 'LOAN']);
 /** A description with dates, times and long reference numbers taken out, so the same payee matches each time. @param {string} s */

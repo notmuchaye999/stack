@@ -3,8 +3,7 @@
    state S first, so nothing hides in a global. */
 import { BK, FREQ, DPM, today, parseISO, daysBetween } from './util.js';
 
-/** @typedef {import('./state.js').State} State @typedef {import('./state.js').Debt} Debt @typedef {import('./state.js').Move} Move
- *  @typedef {import('./state.js').Buy} Buy @typedef {import('./state.js').AsOf} AsOf @typedef {import('./state.js').Every} Every */
+/** @import { State, Debt, Move, Buy, AsOf, Every } from './state.js' */
 
 /** Pays per year. @param {State} S */
 export const ppy = S => FREQ[S.freq].n;

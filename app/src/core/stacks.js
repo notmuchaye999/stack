@@ -4,8 +4,7 @@ import { BK, uid, today } from './util.js';
 import { ppy, debtNow, openBuys, buyLeft, buyPerPay, savedNow, debtName } from './balances.js';
 import { costs, allocate } from './projection.js';
 
-/** @typedef {import('./state.js').State} State @typedef {import('./state.js').PayStack} PayStack @typedef {import('./state.js').Move} Move
- *  @typedef {import('./state.js').MoveType} MoveType */
+/** @import { State, PayStack, Move, MoveType } from './state.js' */
 
 /**
  * One pay's plan, in this order: one period's bills → minimum repayments → planned buys → the rest split by your %,
