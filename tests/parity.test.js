@@ -6,6 +6,7 @@ import { buildStates } from './helpers/states.js';
 import * as B from '../app/src/core/balances.js';
 import { today } from '../app/src/core/util.js';
 import * as P_ from '../app/src/core/projection.js';
+import * as St from '../app/src/core/stages.js';
 
 const json = v => JSON.parse(JSON.stringify(v ?? null));
 let P, states;
@@ -43,4 +44,11 @@ describe('the countdown matches the prototype', () => {
     S => S.moves.map(m => P_.impactOf(S, m, P_.project(S).fi)));
   same('what a new entry would do', "(BASE = project().fi, [hypo('spend', 80), hypo('saved', 200), hypo('invested', 500), hypo('debt', 300, S.debts[0] && S.debts[0].id)])",
     S => { const b = P_.project(S).fi; return [P_.hypo(S, 'spend', 80, null, b), P_.hypo(S, 'saved', 200, null, b), P_.hypo(S, 'invested', 500, null, b), P_.hypo(S, 'debt', 300, S.debts[0] && S.debts[0].id, b)]; });
+});
+
+describe('stages and the suggested split match the prototype', () => {
+  same('stageInfo', '(st => Object.assign(st, { color: st.color.replace("var(--c-", "").replace(")", "") }))(stageInfo(project()))',
+    S => { const { tone: t, ...st } = St.stageInfo(S, P_.project(S)); return Object.assign(st, { color: t }); });
+  same('suggest', 'suggest(stageInfo(project()))', S => St.suggest(S, St.stageInfo(S, P_.project(S))));
+  same('suggest for every stage', '[1,2,3,4,5].map(n => suggest({ n }))', S => [1, 2, 3, 4, 5].map(n => St.suggest(S, { n })));
 });
