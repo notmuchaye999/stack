@@ -7,16 +7,16 @@ import { now, uid } from './util.js';
  * @typedef {{ date: string, t: number }} AsOf  A balance was correct at this moment.
  * @typedef {'week' | 'fortnight' | 'month' | 'quarter' | 'year'} Every
  * @typedef {{ spend: number, debt: number, save: number, invest: number }} Split  Percentages.
- * @typedef {{ id: string, name: string, amount: number, every: Every }} Bill
+ * @typedef {{ id: string, name: string, amount: number, every: Every, due?: string | null }} Bill  due: a date it falls due (any one).
  * @typedef {{ id: string, name: string, balance: number, rate: number, min: number, minAmt?: number, minEvery?: Every,
- *   od?: boolean, free?: boolean, until?: string | null, focus?: boolean, asOf: AsOf | null }} Debt
- *   balance is what was owed at asOf. min is the repayment converted to a monthly amount; minAmt/minEvery are as entered.
+ *   od?: boolean, free?: boolean, until?: string | null, focus?: boolean, due?: string | null, asOf: AsOf | null }} Debt
+ *   balance is what was owed at asOf. due: a date a repayment falls due. min is the repayment converted to a monthly amount; minAmt/minEvery are as entered.
  * @typedef {{ id: string, name: string, cost: number, by: string, bought?: boolean }} Buy  A planned buy.
  * @typedef {'pay' | 'spend' | 'bill' | 'debt' | 'saved' | 'invested' | 'skip'} MoveType
  * @typedef {{ id: string, t: number, date: string, amount: number, type: MoveType, ref?: string | null, buy?: string,
  *   note?: string, src: 'manual' | 'import' | 'stack', stack?: string, bank?: number, key?: string | null }} Move
  *   Money that actually moved. For imports, bank is the signed bank amount and key groups similar lines.
- * @typedef {{ bills: number, buys: number, buyNames: string[], spend: number, debts: Record<string, number>, save: number, invest: number }} StackPlan
+ * @typedef {{ bills: number, billList?: import('./due.js').BillDue[], buys: number, buyNames: string[], spend: number, debts: Record<string, number>, save: number, invest: number }} StackPlan
  * @typedef {{ id: string, t: number, date: string, amount: number, plan: StackPlan, short: number, spare: number }} PayStack
  * @typedef {{ key: string, pos: boolean, type: MoveType, ref: string | null }} Rule  A label you taught the importer.
  * @typedef {{ v: 4, pay: number, freq: 'week' | 'fortnight' | 'month', pct: Split, bills: Bill[], debts: Debt[], buys: Buy[],

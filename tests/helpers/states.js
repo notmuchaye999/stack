@@ -40,5 +40,17 @@ export function buildStates(P) {
   out.weekly = clone(sample);
   out.weekly.freq = 'week';
   out.weekly.debts.push({ id: id(), name: 'Old Afterpay', balance: 400, rate: 22, min: 40, minAmt: 40, minEvery: 'month', free: true, until: addDays(t, -5), asOf: { date: addDays(t, -30), t: 0 } });
+
+  // Due dates: a monthly bill due in 5 days, one due after the next pay, a yearly bill being saved up,
+  // a weekly bill, and repayments with due dates (monthly card, fortnightly BNPL).
+  out.dueDates = clone(sample);
+  const byName = n => out.dueDates.bills.find(b => b.name === n);
+  byName('Phone').due = addDays(t, 5);
+  byName('Car insurance').due = addDays(t, 20);
+  byName('Car rego').due = addDays(t, 100);
+  out.dueDates.debts.find(d => d.name === 'Credit card').due = addDays(t, 3);
+  Object.assign(out.dueDates.debts.find(d => d.name === 'BNPL'), { minAmt: 150, minEvery: 'fortnight', due: addDays(t, -2) });
+  out.dueDatesWeekly = Object.assign(clone(out.dueDates), { freq: 'week' });
+  out.dueDatesWeekly.bills.push({ id: id(), name: 'Gym', amount: 30, every: 'fortnight', due: addDays(t, 4) });
   return out;
 }

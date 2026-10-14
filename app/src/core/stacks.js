@@ -1,20 +1,23 @@
 // @ts-check
 /* Stacking a pay: give every dollar of one pay a job, then track what you actually did with it. */
-import { BK, uid, today } from './util.js';
-import { ppy, debtNow, openBuys, buyLeft, buyPerPay, savedNow, debtName } from './balances.js';
+import { BK, uid, today, addDays } from './util.js';
+import { debtNow, openBuys, buyLeft, buyPerPay, savedNow, debtName, periodDays } from './balances.js';
 import { costs, allocate } from './projection.js';
+import { billsFor, repayIn } from './due.js';
 
 /** @import { State, PayStack, Move, MoveType } from './state.js' */
 
 /**
- * One pay's plan, in this order: one period's bills → minimum repayments → planned buys → the rest split by your %,
- * with rollover (see allocate). short = how much the pay doesn't cover bills and minimums. spare = left without a job.
+ * One pay's plan, in this order: bills due before the next pay → repayments due before the next pay → planned buys →
+ * the rest split by your %, with rollover (see allocate). Quarterly/yearly bills, and anything without a due date,
+ * are set aside a little each pay instead. short = how much the pay doesn't cover bills and repayments. spare = left without a job.
  * @param {State} S @param {number} amount @param {string} date @returns {PayStack}
  */
 export function makeStack(S, amount, date) {
-  const C = costs(S), L = C.L, f = 12 / ppy(S), pc = L.pct;
-  const debts = S.debts.map(d => { const bal = debtNow(S, d); return { id: d.id, bal, rate: d.rate, min: Math.min(bal, d.min * f), od: !!d.od, free: !!d.free, until: d.until, focus: !!d.focus }; });
-  const bills = L.billsM * f, mins = debts.reduce((s, d) => s + d.min, 0);
+  const C = costs(S), L = C.L, pc = L.pct;
+  const end = addDays(date, periodDays(S)), billList = billsFor(S, date, end);
+  const debts = S.debts.map(d => { const bal = debtNow(S, d); return { id: d.id, bal, rate: d.rate, min: Math.min(bal, repayIn(S, d, date, end)), od: !!d.od, free: !!d.free, until: d.until, focus: !!d.focus }; });
+  const bills = billList.reduce((s, b) => s + b.v, 0), mins = debts.reduce((s, d) => s + d.min, 0);
   const bl = openBuys(S).map(b => ({ id: b.id, name: b.name, v: Math.min(buyLeft(S, b), buyPerPay(S, b, date)) })).filter(b => b.v > 0.5);
   const buys = Math.min(Math.max(0, amount - bills - mins), bl.reduce((s, b) => s + b.v, 0));
   const rem = amount - bills - mins - buys;
@@ -27,7 +30,7 @@ export function makeStack(S, amount, date) {
   const dp = {};
   debts.forEach(d => { const v = (a.mins[d.id] || 0) + (a.extra[d.id] || 0); if (v > 0.005) dp[d.id] = v; });
   const used = bills + buys + Object.values(dp).reduce((s, v) => s + v, 0) + sh.spend + a.save + a.invest;
-  return { id: uid(), t: Date.now(), date, amount, plan: { bills, buys, buyNames: bl.map(b => b.name), spend: sh.spend, debts: dp, save: a.save, invest: a.invest },
+  return { id: uid(), t: Date.now(), date, amount, plan: { bills, billList, buys, buyNames: bl.map(b => b.name), spend: sh.spend, debts: dp, save: a.save, invest: a.invest },
     short: rem < 0 ? -rem : 0, spare: Math.max(0, amount - used) };
 }
 

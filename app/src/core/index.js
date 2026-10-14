@@ -6,6 +6,7 @@ export * from './state.js';
 export * from './balances.js';
 export * from './projection.js';
 export * from './stages.js';
+export * from './due.js';
 export * from './stacks.js';
 export * from './csv.js';
 export * from './pdf.js';
