@@ -26,8 +26,9 @@ export function sampleState() {
   ];
   S.buys = [{ id: uid(), name: 'Car parts', cost: 180 }, { id: uid(), name: 'Tools', cost: 250 }, { id: uid(), name: 'Impact driver', cost: 420 }];
   const spend = (/** @type {string} */ date, /** @type {number} */ amount, /** @type {string} */ note) => S.moves.push({ id: uid(), t: Date.now() + S.moves.length, date, amount, type: 'spend', note, src: 'manual' });
-  // What the app does after "Mark all done": re-stack the pay you're in and settle your rank.
-  const redraw = () => { touch(); restack(S); ensureRank(S); checkRank(S); };
+  // What the app does after "Mark all done": re-stack the pay you're in and place your rank. Redrawing takes a moment, so
+  // everything recorded after it comes after your rank was placed (the pay day tally counts it); here the clock is let tick.
+  const redraw = () => { touch(); restack(S); ensureRank(S); checkRank(S); const t = Date.now(); while (Date.now() <= t); };
   [[-28, 1385], [-14, 1420]].forEach(([o, amt]) => {
     const s = stackPay(S, amt, d(o), leftover(S, d(o)));
     didAll(S, s.id, true); redraw();

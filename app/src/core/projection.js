@@ -2,7 +2,7 @@
 /* The countdown: how your money moves month by month until you're debt-free, your Buffer is full and your
    investments cover your costs. */
 import { BK, DPM, today, daysBetween, addDays } from './util.js';
-import { ppy, sumType, billsMonthly, minsMonthly, bufferT, perPay, periodDays, isCard, trackSpend, cardBudget, potTotal,
+import { ppy, sumType, billsMonthly, minsMonthly, bufferT, perPay, periodDays, isCard, trackSpend, potTotal,
   savedNow, investedNow, poolBal, debtPlan, order } from './balances.js';
 import { instIn, instLeft } from './due.js';
 import { stackItems } from './stacks.js';

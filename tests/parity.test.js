@@ -140,6 +140,14 @@ describe('saved data matches the prototype', () => {
     P.run('(loadSample(), 0)');
     expect(steady(C.sampleState())).toEqual(steady(P.getState()));
   });
+  it('the sample data, then a pay day', () => {
+    P.run('(loadSample(), 0)');
+    const S = C.sampleState(), pay = S => C.stackPay(S, 1400, C.today(), 0, null, C.pvMore(S, C.today()));
+    // Its rank was placed after the first pay, so the pays after it count in the tally.
+    expect(S.moves.filter(m => m.type === 'pay').sort((a, b) => a.t - b.t).slice(1).every(m => m.t > S.rank.t)).toBe(true);
+    const mine = (pre => (pay(S), C.settleRank(S, pre)))(C.preSettle(S));
+    expect(steady(mine)).toEqual(steady(P.run('(pre => (stackPay(1400, today(), 0, null, pvMore(today())), settleRank(pre)))(preSettle())')));
+  });
   it('bringing old data up to date', () => {
     // Data the way the first version of this app (and older prototypes) saved it: a 4-part split, imported bank lines,
     // stacks without plans or Savings, a card called Card and an Afterpay.
