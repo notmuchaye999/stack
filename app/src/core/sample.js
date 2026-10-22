@@ -1,49 +1,40 @@
 // @ts-check
-/* Sample data, so you can see how Stack works before entering your own. */
+/* Sample data: a filled-in Stack to try in Test mode. */
 import { uid, today, addDays } from './util.js';
 import { blank } from './state.js';
-import { readStatement } from './csv.js';
-import { prepImport, signedAmt, tidy } from './categorize.js';
-import { makeStack } from './stacks.js';
+import { stackPay, leftover, didAll, stackItems, restack } from './stacks.js';
+import { touch } from './plans.js';
+import { ensureRank, checkRank } from './rank.js';
 
-/** A made-up CommBank-style statement covering the last 6 weeks. */
-export function sampleCSV() {
-  const t = today(), rows = [
-    [-40, 1385.20, 'Salary Acme Diesel Pty Ltd'], [-40, -300, 'Transfer To xx4821 Card top up'], [-40, -150, 'BNPL Repayment'],
-    [-39, -60, 'Credit Card Payment'], [-38, -95, 'Direct Debit Car Insurance'], [-37, -100, 'Transfer to Savings xx9910'],
-    [-35, -120, 'Transfer To xx4821 Card top up'], [-33, -45, 'Direct Debit Phone Co'], [-30, -80, 'Transfer To xx4821 Card top up'],
-    [-26, 1385.20, 'Salary Acme Diesel Pty Ltd'], [-26, -300, 'Transfer To xx4821 Card top up'], [-26, -150, 'BNPL Repayment'],
-    [-25, -260, 'Transfer To xx4821 Card top up'], [-24, -240, 'Transfer to Board xx1180'], [-21, -50, 'Transfer to Invest xx5531'],
-    [-19, -18.99, 'Direct Debit Streaming'], [-16, -60, 'Transfer To xx4821 Card top up'], [-12, 1385.20, 'Salary Acme Diesel Pty Ltd'],
-    [-12, -300, 'Transfer To xx4821 Card top up'], [-12, -150, 'BNPL Repayment'], [-11, -60, 'Credit Card Payment'],
-    [-10, -240, 'Transfer to Board xx1180'], [-8, -60, 'Transfer To xx4821 Card top up'], [-5, 20, 'Fast Transfer From J Citizen'],
-    [-3, -50, 'Transfer To xx4821 Card top up'],
-  ];
-  let bal = -212.4;
-  return rows.map(([o, a, d]) => { bal += /** @type {number} */ (a); const [y, m, dd] = addDays(t, /** @type {number} */ (o)).split('-'); return `${dd}/${m}/${y},"${+a > 0 ? '+' : ''}${(+a).toFixed(2)}","${d}","${bal >= 0 ? '+' : ''}${bal.toFixed(2)}"`; }).reverse().join('\n');
-}
+/** @import { State } from './state.js' */
 
-/** A whole made-up person: bills, debts, planned buys, the sample statement imported, and the latest pay stacked. */
+/** Three fortnights of a made-up person: bills, an everyday card, Afterpay and a tool loan, purchases to save for,
+ *  two finished pays and the one they're in. @returns {State} */
 export function sampleState() {
-  const S = blank();
-  const t = today(), past = { date: addDays(t, -45), t: 0 };
-  Object.assign(S, { pay: 1385.2, freq: 'fortnight', sample: true, pct: { spend: 25, debt: 70, save: 0, invest: 5 } });
+  const t = today(), d = (/** @type {number} */ n) => addDays(t, n), past = { date: d(-31), t: 0 };
+  const S = Object.assign(blank(), { qs: true, sample: true, freq: /** @type {const} */ ('fortnight'), plan: 'custom', planV: 1, pct: { spend: 25, pot: 10, debt: 10, save: 15, invest: 40 },
+    startSaved: 400, savedAsOf: past, startInvested: 1500, investedAsOf: past, walletV: 1, tagsV: 1, potV: 1, billV: 1, in4V: 1 });
   S.bills = [
-    { id: uid(), name: 'Board', amount: 120, every: 'week' }, { id: uid(), name: 'Phone', amount: 45, every: 'month' },
-    { id: uid(), name: 'Car insurance', amount: 95, every: 'month' }, { id: uid(), name: 'Car rego', amount: 850, every: 'year' },
-    { id: uid(), name: 'Streaming', amount: 19, every: 'month' },
+    { id: uid(), name: 'Board', amount: 120, every: 'week' }, { id: uid(), name: 'Phone', amount: 45, every: 'month', due: d(6) },
+    { id: uid(), name: 'Car insurance', amount: 95, every: 'month', due: d(11) }, { id: uid(), name: 'Rego', amount: 850, every: 'year', due: d(140) },
+    { id: uid(), name: 'Streaming', amount: 19, every: 'month', due: d(3) },
   ];
   S.debts = [
-    { id: uid(), name: 'Everyday account', balance: 1240, rate: 0, min: 0, od: true, asOf: past },
-    { id: uid(), name: 'Credit card', balance: 2400, rate: 19.99, min: 60, od: false, asOf: past },
-    { id: uid(), name: 'BNPL', balance: 900, rate: 0, min: 300, od: false, asOf: past },
+    { id: uid(), name: 'Card', card: true, wallet: true, limit: 1000, balance: 420, rate: 0, min: 0, minAmt: 0, minEvery: 'month', due: null, od: false, free: true, until: null, lock: true, focus: true, asOf: past },
+    { id: uid(), name: 'Afterpay', card: true, limit: 800, balance: 450, rate: 0, min: 150 * 26 / 12, minAmt: 150, minEvery: 'fortnight', due: null, od: false, free: true, until: null, lock: true, viaWallet: true, in4: true, asOf: past },
+    { id: uid(), name: 'Snap-On', balance: 600, rate: 0, min: 100 * 26 / 12, minAmt: 100, minEvery: 'fortnight', due: null, od: false, free: false, until: null, asOf: past },
   ];
-  S.debts[1].free = true; S.debts[1].until = addDays(t, 120);
-  S.buys = [{ id: uid(), name: 'Tools', cost: 250, by: addDays(t, 60) }, { id: uid(), name: 'Car parts', cost: 180, by: addDays(t, 30) }];
-  const { rows } = prepImport(S, readStatement(sampleCSV()));
-  let tt = 1;
-  rows.reverse().forEach(r => { if (r.type !== 'skip') S.moves.push({ id: uid(), t: tt++, date: r.date, amount: signedAmt(r.type, r.amount), bank: r.amount, key: r.key, type: r.type, ref: r.ref, note: tidy(r.desc), src: 'import' }); });
-  const lp = S.moves.filter(m => m.type === 'pay').sort((a, b) => b.date.localeCompare(a.date))[0];
-  if (lp) { const s = makeStack(S, lp.amount, lp.date); S.stacks.push(s); lp.stack = s.id; }
+  S.buys = [{ id: uid(), name: 'Car parts', cost: 180 }, { id: uid(), name: 'Tools', cost: 250 }, { id: uid(), name: 'Impact driver', cost: 420 }];
+  const spend = (/** @type {string} */ date, /** @type {number} */ amount, /** @type {string} */ note) => S.moves.push({ id: uid(), t: Date.now() + S.moves.length, date, amount, type: 'spend', note, src: 'manual' });
+  // What the app does after "Mark all done": re-stack the pay you're in and settle your rank.
+  const redraw = () => { touch(); restack(S); ensureRank(S); checkRank(S); };
+  [[-28, 1385], [-14, 1420]].forEach(([o, amt]) => {
+    const s = stackPay(S, amt, d(o), leftover(S, d(o)));
+    didAll(S, s.id, true); redraw();
+    [[1, 64, 'Fuel'], [3, 38, 'Food'], [6, 22, 'Takeaway'], [9, 71, 'Fuel'], [12, 45, 'Food']].forEach(([k, a, n]) => spend(d(o + /** @type {number} */ (k)), /** @type {number} */ (a), /** @type {string} */ (n)));
+  });
+  const s = stackPay(S, 1360, t, leftover(S, t)), top = stackItems(S, s).todos.find(i => i.load !== undefined);
+  if (top) S.moves.push({ id: uid(), t: Date.now() + S.moves.length, date: t, amount: top.plan, type: 'debt', ref: top.ref, note: top.note, src: 'manual' });
+  spend(t, 54, 'Fuel');
   return S;
 }

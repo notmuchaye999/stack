@@ -2,8 +2,8 @@
 /* Shared constants and date helpers. Nothing in src/core touches the page (no document, window or storage),
    so the same files run in the browser, in Node tests and, later, in the React Native app. */
 
-/** The four parts of a pay's split, in display order. */
-export const BK = /** @type {const} */ (['spend', 'debt', 'save', 'invest']);
+/** The five parts of a pay's split, in display order. pot is Savings (for purchases), save is the Buffer. */
+export const BK = /** @type {const} */ (['spend', 'pot', 'debt', 'save', 'invest']);
 
 /** How often something happens, and how many times a year. */
 export const FREQ = {
@@ -12,9 +12,9 @@ export const FREQ = {
   year: { n: 1, label: 'Yearly', per: 'a year' },
 };
 
-/** Every label an entry can have. */
-export const TYPES = /** @type {const} */ (['pay', 'spend', 'bill', 'debt', 'saved', 'invested', 'skip']);
-/** Entries that show how they moved the FI date. */
+/** What each kind of entry is called. @type {Record<string, string>} */
+export const TYPE_NAMES = { pay: 'Pay in', spend: 'Spent', debt: 'Debt', saved: 'Buffer', invested: 'Invested', pot: 'Savings', mkt: 'Market', xout: 'Moved out', topay: 'Into Pay', bill: 'Bill paid' };
+/** Entries that show how they moved the countdown. */
 export const IMPACT_TYPES = ['spend', 'saved', 'invested', 'debt'];
 
 /** Average days in a month. */
@@ -25,6 +25,10 @@ export const uid = () => Math.random().toString(36).slice(2, 10);
 export const clamp = v => Math.min(1, Math.max(0, v || 0));
 /** @param {number} n */
 export const pad2 = n => String(n).padStart(2, '0');
+/** To the nearest $5. @param {number} v */
+export const r5 = v => Math.round(v / 5) * 5;
+/** To the cent. @param {number} v */
+export const r2 = v => Math.round(v * 100) / 100;
 
 /* Dates are plain 'YYYY-MM-DD' strings in local time. */
 /** @param {Date} d */
@@ -38,3 +42,6 @@ export const addDays = (s, n) => { const d = parseISO(s); d.setDate(d.getDate() 
 export const daysBetween = (a, b) => Math.round((+parseISO(b) - +parseISO(a)) / 864e5);
 /** A moment in time, used to say "this balance was correct as of …". */
 export const now = () => ({ date: today(), t: Date.now() });
+
+/** Newest first. @template {{ date: string, t: number }} M @param {M[]} ms @returns {M[]} */
+export const sortMoves = ms => [...ms].sort((a, b) => b.date.localeCompare(a.date) || b.t - a.t);

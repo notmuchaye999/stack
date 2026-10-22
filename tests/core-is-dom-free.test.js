@@ -14,7 +14,7 @@ describe('src/core', () => {
   });
   it('loads from one entry point', async () => {
     const core = await import('../app/src/core/index.js');
-    for (const name of ['project', 'allocate', 'cycles', 'costs', 'levels', 'stageInfo', 'suggest', 'makeStack', 'stackItems',
-      'readStatement', 'readPdfStatement', 'pdfTextLines', 'categorize', 'prepImport', 'readImport', 'sampleState']) expect(typeof core[name], name).toBe('function');
+    for (const name of ['project', 'allocate', 'cycles', 'costs', 'levels', 'specOf', 'payPlans', 'makeStack', 'stackItems', 'payNow',
+      'moveRecs', 'unlocks', 'tierOf', 'preSettle', 'settleRank', 'goalNow', 'normalize', 'readBackup', 'sampleState']) expect(typeof core[name], name).toBe('function');
   });
 });
