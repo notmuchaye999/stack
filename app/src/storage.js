@@ -1,7 +1,7 @@
 /* Where Stack keeps your data on this device: IndexedDB, one record under the key 'stack-v4' holding the same
-   JSON text the prototype saved. Nothing ever leaves the phone.
+   JSON text the prototype saves. Nothing ever leaves the phone. What comes back is brought up to date by normalize().
    Saves are queued: if you drag a slider, only the latest version gets written once the previous write finishes. */
-import { KEY, OLD_KEY, blank, fromV4, fromV3 } from './core/index.js';
+import { KEY, blank, fromSaved } from './core/index.js';
 
 const DB_NAME = 'stack', STORE = 'kv';
 let dbP = null, problem = () => {};
@@ -36,8 +36,8 @@ const parse = txt => { try { return JSON.parse(txt); } catch (e) { return null; 
 export async function loadState() {
   let txt = null, idbOk = true;
   try { txt = await idbGet(KEY); } catch (e) { idbOk = false; problem(); }
-  if (txt) { const o = fromV4(parse(txt)); if (o) return o; }
-  const local = fromV4(parse(lsGet(KEY))) || fromV3(parse(lsGet(OLD_KEY)));
+  if (txt) { const o = fromSaved(parse(txt)); if (o) return o; }
+  const local = fromSaved(parse(lsGet(KEY)));
   if (local) { if (idbOk) saveState(local); return local; }
   return blank();
 }
