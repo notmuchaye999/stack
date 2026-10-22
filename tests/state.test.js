@@ -1,34 +1,54 @@
 import { describe, it, expect } from 'vitest';
-import { blank, readImport, summarize } from '../app/src/core/state.js';
+import { blank, makeBackup, readBackup, hasData, fromSaved } from '../app/src/core/state.js';
+import { normalize } from '../app/src/core/migrate.js';
 
-describe('readImport (Plan → Data → Import)', () => {
-  it('accepts what Export produced and summarises it', () => {
-    const S = blank();
-    S.moves.push({ id: 'a', t: 1, date: '2026-10-01', amount: 2000, type: 'pay', src: 'manual' });
-    S.bills.push({ id: 'b', name: 'Phone', amount: 45, every: 'month' });
-    const r = readImport('  ' + JSON.stringify(S) + '\n');
+const someData = () => {
+  const S = blank();
+  S.moves.push({ id: 'a', t: 1, date: '2026-10-01', amount: 2000, type: 'pay', src: 'manual' });
+  S.bills.push({ id: 'b', name: 'Phone', amount: 45, every: 'month' });
+  return S;
+};
+
+describe('backups', () => {
+  it('a backup file reads back as the same data, with what\'s in it', () => {
+    const S = someData(), r = readBackup(makeBackup(S, '2026-10-14'));
     expect(r.ok).toBe(true);
-    expect(r.state).toEqual(S);
-    expect(r.summary).toBe('1 pay, 0 other entries, 1 bill, 0 debts, 0 planned buys');
+    expect(r.at).toBe('2026-10-14');
+    expect(r.data).toEqual(Object.assign({}, S, { lastBackup: '2026-10-14' }));
+    expect(r.counts).toEqual({ bills: 1, debts: 0, buys: 0, pays: 1 });
   });
-  it('fills in lists older saves were missing', () => {
-    const S = blank(); delete S.buys; delete S.rules;
-    const r = readImport(JSON.stringify(S));
-    expect(r.ok && r.state.buys).toEqual([]);
-    expect(r.ok && r.state.rules).toEqual([]);
-  });
-  it('migrates a version 3 save', () => {
-    const r = readImport(JSON.stringify({ pay: 1500, pct: { everyday: 20, fun: 10, debt: 40, emerg: 20, invest: 10 }, pays: [{ date: '2026-09-01', amount: 1500 }], spends: [], debts: [], bills: [] }));
+  it('also takes a plain copy of the data, the way this app\'s old Export copied it', () => {
+    const r = readBackup('  ' + JSON.stringify(someData()) + '\n');
     expect(r.ok).toBe(true);
-    expect(r.state.pct).toEqual({ spend: 30, debt: 40, save: 20, invest: 10 });
-    expect(r.state.moves[0]).toMatchObject({ type: 'pay', amount: 1500 });
+    expect(r.counts.pays).toBe(1);
   });
-  it('rejects anything else with a plain message', () => {
-    expect(readImport('hello').ok).toBe(false);
-    expect(readImport('{"foo":1}').ok).toBe(false);
-    expect(readImport('[]').ok).toBe(false);
+  it('turns down anything else', () => {
+    for (const t of ['hello', '{"foo":1}', '[]', '{"app":"stack","data":{"v":3}}', '']) expect(readBackup(t).ok, t).toBe(false);
   });
-  it('summary counts are plural-aware', () => {
-    expect(summarize(blank())).toBe('0 pays, 0 other entries, 0 bills, 0 debts, 0 planned buys');
+});
+
+describe('saved data', () => {
+  it('knows when anything has been entered', () => {
+    expect(hasData(blank())).toBe(false);
+    expect(hasData(someData())).toBe(true);
+  });
+  it('fills in lists older saves were missing, and brings them up to date', () => {
+    const o = blank(); delete o.buys; delete o.pct.pot;
+    const S = normalize(fromSaved(o));
+    expect(S.buys).toEqual([]);
+    expect(S.pct.pot).toBe(0);
+    expect(S).toMatchObject({ walletV: 1, tagsV: 1, planV: 1, potV: 1, billV: 1, in4V: 1 });
+    expect(fromSaved({ v: 3 })).toBe(null);
+  });
+  it('old bank-import lines that were never money are dropped; the credit called Card becomes the everyday card', () => {
+    const S = Object.assign(blank(), {
+      debts: [{ id: 'c', name: 'Card', card: true, limit: 1000, balance: 0, rate: 0, min: 0, asOf: null }, { id: 'a', name: 'Afterpay', card: true, limit: 800, balance: 0, rate: 0, min: 0, asOf: null }],
+      moves: [{ id: 's', t: 1, date: '2026-10-01', amount: 5, type: 'skip', src: 'import' }, { id: 'b', t: 2, date: '2026-10-01', amount: 45, type: 'bill', src: 'import' }],
+    });
+    delete S.pct.pot;
+    normalize(S);
+    expect(S.moves).toEqual([]);
+    expect(S.debts[0].wallet).toBe(true);
+    expect(S.debts[1]).toMatchObject({ viaWallet: true, in4: true });
   });
 });

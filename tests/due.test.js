@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { billsFor, repayIn, nextOn, dueIn, everyPay } from '../app/src/core/due.js';
-import { makeStack } from '../app/src/core/stacks.js';
+import { billsFor, repayIn, nextOn, dueIn, everyPay, lateBills, tickBill, billNow, billsDueNow, billPaidTo, instDates, overdue } from '../app/src/core/due.js';
+import { makeStack, stackPay } from '../app/src/core/stacks.js';
 import { monthly } from '../app/src/core/balances.js';
 import { mk, bill, debt } from './helpers/make.js';
 
+// Every test runs on Wednesday 14 Oct 2026.
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 14, 10)); });
 afterEach(() => vi.useRealTimers());
 
@@ -44,11 +45,70 @@ describe('due dates', () => {
     expect(repayIn(S, card, '2026-10-30', '2026-11-13')).toBe(0);
     expect(repayIn(S, debt({ min: monthly(300, 'month'), minAmt: 300, minEvery: 'month' }), '2026-10-16', '2026-10-30')).toBeCloseTo(300 * 12 / 26);
   });
-  it('a stacked pay lists each bill and what it is for', () => {
-    const S = mk({ pay: 2000, pct: { spend: 100, debt: 0, save: 0, invest: 0 },
+  it('a stacked pay lists each bill, and holds back the total rounded up to the dollar', () => {
+    const S = mk({ pct: { spend: 100, pot: 0, debt: 0, save: 0, invest: 0 },
       bills: [withDue(bill('Optus', 65, 'month'), '2026-10-20'), bill('Board', 120, 'week'), withDue(bill('Rego', 850, 'year'), '2027-02-01')] });
     const s = makeStack(S, 2000, '2026-10-16');
     expect(s.plan.billList.map(b => b.name)).toEqual(['Optus', 'Board', 'Rego']);
-    expect(s.plan.bills).toBeCloseTo(65 + 240 + 850 / 26);
+    expect(s.plan.bills).toBe(Math.ceil(65 + 240 + 850 / 26));
+  });
+});
+
+describe('overdue bills', () => {
+  it('a bill that fell due before a pay, not paid and not held by an earlier pay, comes out of this one', () => {
+    const S = mk({ bills: [withDue(bill('Phone', 45, 'month'), '2026-10-01')] });
+    expect(lateBills(S, '2026-10-14')).toEqual([{ id: S.bills[0].id, name: 'Phone', d: '2026-10-01', v: 45 }]);
+    const s = makeStack(S, 1000, '2026-10-14');
+    expect(s.plan.billList.find(b => b.late)).toMatchObject({ name: 'Phone', v: 45, due: '2026-10-01' });
+    expect(s.late).toHaveLength(1); // kept with the pay, so ticking it off later doesn't move the pay
+  });
+  it('a pay that covered the due date already held the money for it', () => {
+    const S = mk({ bills: [withDue(bill('Phone', 45, 'month'), '2026-10-01')] });
+    stackPay(S, 1000, '2026-09-28');
+    expect(lateBills(S, '2026-10-14')).toEqual([]);
+  });
+  it('an urgent one-off past its date is overdue', () => {
+    const S = mk();
+    const fine = debt({ balance: 300, min: 300, minAmt: 300, due: '2026-10-10', urgent: true });
+    expect(overdue(S, fine)).toBe(true);
+    expect(overdue(S, Object.assign({}, fine, { due: '2026-10-20' }))).toBe(false);
+    expect(overdue(S, Object.assign({}, fine, { urgent: false }))).toBe(false);
+  });
+});
+
+describe('ticking bills off', () => {
+  it('ticking records the payment out of Pay, and unticking takes it back off', () => {
+    const S = mk({ bills: [withDue(bill('Phone', 45, 'month'), '2026-10-20')] });
+    stackPay(S, 1000, '2026-10-14');
+    const id = S.bills[0].id;
+    expect(billNow(S, S.bills[0])).toMatchObject({ date: '2026-10-20', paid: false, late: false });
+    expect(tickBill(S, id, '2026-10-20')).toBe(true);
+    expect(S.moves.filter(m => m.type === 'bill')).toMatchObject([{ amount: 45, ref: id, d: '2026-10-20' }]);
+    expect(billNow(S, S.bills[0])).toMatchObject({ date: '2026-10-20', paid: true, next: '2026-11-20' });
+    expect(tickBill(S, id, '2026-10-20')).toBe(false);
+    expect(S.moves.filter(m => m.type === 'bill')).toEqual([]);
+  });
+  it('a direct debit ticks itself off on the due date, and can\'t be ticked by hand', () => {
+    const S = mk({ bills: [Object.assign(withDue(bill('Internet', 75, 'month'), '2026-09-10'), { auto: true })] });
+    expect(billPaidTo(S, S.bills[0])).toBe('2026-10-10');
+    expect(tickBill(S, S.bills[0].id, '2026-11-10')).toBe(null);
+  });
+  it('the pay you are in lists each due date before the next pay, and any earlier one not ticked', () => {
+    const S = mk({ bills: [withDue(bill('Phone', 45, 'month'), '2026-09-20'), bill('Board', 120, 'week')] });
+    S.bills[0].paidTo = '2026-09-20';
+    stackPay(S, 1000, '2026-10-14');
+    expect(billsDueNow(S).map(x => [x.b.name, x.date, x.paid, x.late])).toEqual([['Board', '2026-10-14', false, false], ['Phone', '2026-10-20', false, false]]);
+    S.bills[0].paidTo = '2026-08-20';
+    expect(billsDueNow(S).map(x => [x.b.name, x.date, x.late])).toEqual([['Phone', '2026-09-20', true], ['Board', '2026-10-14', false], ['Phone', '2026-10-20', false]]);
+  });
+});
+
+describe('pay in 4', () => {
+  it('the other 3 payments land a fortnight apart, and each pay sets aside the ones due before the next', () => {
+    const x = { grp: 'g', amt: 50, first: '2026-10-20', n: 3 };
+    expect(instDates(x)).toEqual(['2026-10-20', '2026-11-03', '2026-11-17']);
+    const S = mk(), d = debt({ balance: 150, min: 0, card: true, in4: true, inst: [x] });
+    expect(repayIn(S, d, '2026-10-16', '2026-10-30')).toBe(50);
+    expect(repayIn(S, d, '2026-10-30', '2026-11-27')).toBe(100);
   });
 });
