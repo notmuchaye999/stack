@@ -6,7 +6,7 @@ import { app, ui, save } from './store.js';
 import { $, esc, toast, runUndo, page, toTop } from './dom.js';
 import { openSheet, closeSheet, sheetBack, swipeable, numpad, closePad, padDone, padIn, padRestore, padSt, press } from './sheet.js';
 import { renderAll, go, undoOf } from './render.js';
-import { NF, buildSplit, fillSplit, fillPlanInputs, balance, usePlan } from './plan.js';
+import { NF, buildSplit, fillSplit, fillPlanInputs, balance, usePlan, setPct } from './plan.js';
 import { PV, pvReset, payViewClick } from './payview.js';
 import { openQS, qsClick } from './quickstart.js';
 import { rowsOf } from './lists.js';
@@ -24,7 +24,7 @@ import { settingsSheet, testOn, testEnd, testEndSheet, trySample, clearAsk, clea
 let rngT = null;
 document.addEventListener('input', e => {
   const t = e.target, id = t.id || '';
-  if (id.startsWith('rng-')) { const k = id.slice(4), v = Math.round(+t.value || 0); app.S.pct[k] = v; $('#pct-' + k).textContent = v + '%'; clearTimeout(rngT); rngT = setTimeout(() => { save(); renderAll(); }, 120); }
+  if (id.startsWith('rng-')) { setPct(id.slice(4), +t.value || 0); fillSplit(); clearTimeout(rngT); rngT = setTimeout(() => { save(); renderAll(); }, 120); }
 });
 document.addEventListener('change', e => {
   if (e.target.matches('[data-pv-mine]')) { PV.mine = e.target.checked; return; }

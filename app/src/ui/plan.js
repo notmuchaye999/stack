@@ -1,6 +1,6 @@
 /* The Plan tab: the four plans as cards, what yours does with this pay, where it gets you, the path to FI, and the
    assumptions. Before your first pay it works on a pretend pay you can set, so there's something to compare. */
-import { BK, today, now, money, money0, kmoney, fmtDate, monthYear, sumPct, fallbackPct, bankOwed, bufferT, savedNow, investedNow,
+import { BK, today, now, money, money0, kmoney, fmtDate, monthYear, sumPct, fallbackPct, customPct, bankOwed, bufferT, savedNow, investedNow,
   poolBal, PLANS, PLAN_N, PLAN_RULE, ruleOf, planName, specOf, withSpec, withRestacked, withTempPay, latestStack, project, cardBudget,
   potTotal, goalVal, goalName, dateIn, whenTxt, derive } from '../core/index.js';
 import { app, save } from './store.js';
@@ -18,15 +18,22 @@ export const NF = {
   saved: { label: 'Buffer balance now', prefix: '$', dec: 2, max: 1e9, get: () => savedNow(app.S), set: v => { app.S.startSaved = v; app.S.savedAsOf = now(); } },
   inv:   { label: 'Investments worth now', prefix: '$', dec: 2, max: 1e9, get: () => investedNow(app.S), set: v => { app.S.startInvested = v; app.S.investedAsOf = now(); } },
 };
-BK.forEach(k => { NF['pct-' + k] = { label: `${BM[k].name} share`, suffix: '%', dec: 0, max: 100, get: () => app.S.pct[k], set: v => { app.S.pct[k] = Math.round(v); } }; });
+BK.forEach(k => { NF['pct-' + k] = { label: `${BM[k].name} share`, suffix: '%', dec: 0, max: 100, get: () => customPct(app.S)[k] || 0, set: v => setPct(k, v) }; });
+/** Change one part of your split. Until you've set one, Stack uses a starting split, so that's what you're changing. */
+export function setPct(k, v) { const S = app.S; if (!sumPct(S)) S.pct = Object.assign({}, fallbackPct(S)); S.pct[k] = Math.round(v); }
 
 export function buildSplit() {
-  $('#p-split').innerHTML = BK.map(k => `<div class="sp-row">
-      <span class="sp-n"><b><i class="chip" style="background:${BM[k].color}"></i>${BM[k].name}</b><small class="num" id="pm-${k}"></small></span>
-      <input type="range" id="rng-${k}" min="0" max="100" step="5" style="accent-color:${BM[k].color}" aria-label="${BM[k].name} share">
-      <button class="nfield pct" type="button" data-n="pct-${k}" id="pct-${k}" aria-label="${BM[k].name} percent"></button></div>`).join('');
+  $('#p-split').innerHTML = BK.map(k => `<div class="sp-row" style="--c:${BM[k].color}">
+      <span class="sp-n"><b><i class="chip"></i>${BM[k].name}</b><small class="num" id="pm-${k}"></small></span>
+      <button class="nfield pct" type="button" data-n="pct-${k}" id="pct-${k}" aria-label="${BM[k].name} percent"></button>
+      <input class="sp-rng" type="range" id="rng-${k}" min="0" max="100" step="5" aria-label="${BM[k].name} share"></div>`).join('');
 }
-export function fillSplit() { const S = app.S; BK.forEach(k => { $('#rng-' + k).value = S.pct[k] || 0; $('#pct-' + k).textContent = (S.pct[k] || 0) + '%'; }); }
+/** Shows the split Stack is using: the sliders, the percentages and the bar of the whole lot. */
+export function fillSplit() {
+  const P = customPct(app.S), tot = BK.reduce((t, k) => t + (P[k] || 0), 0);
+  BK.forEach(k => { const v = P[k] || 0, r = $('#rng-' + k); r.value = String(v); r.style.setProperty('--f', String(v / 100)); $('#pct-' + k).textContent = v + '%'; });
+  const bar = $('#p-sbar'); if (bar) bar.innerHTML = BK.filter(k => P[k] > 0).map(k => `<span style="width:${(P[k] / Math.max(100, tot) * 100).toFixed(2)}%;background:${BM[k].color}"></span>`).join('');
+}
 /** Puts your settings into every input on screen (Plan, and Settings when it's open). */
 export function fillPlanInputs() {
   const S = app.S;
@@ -38,11 +45,16 @@ export function fillPlanInputs() {
   const bk = $('#bk-last'); if (bk) bk.textContent = S.lastBackup ? fmtDate(S.lastBackup) : 'Never';
   const cs = $('#cloud-st'); if (cs) cs.textContent = 'This phone only';
 }
+/* The milestones on the way to FI, as dots on the line. */
+const FI_MS = [['emFull', 'var(--c-save)', 'Buffer full'], ['debtFree', 'var(--c-debt)', 'Debt-free'], ['zero', 'var(--ink)', 'Net worth above $0']];
 function renderFI(P, PLf, est, nm) {
-  const S = app.S, wrap = $('#p-fi'), xl = $('#p-fi-x'), lg = $('#p-legend');
+  const S = app.S, wrap = $('#p-fi'), xl = $('#p-fi-x'), lg = $('#p-legend'), what = $('#p-fi-what');
   $('#p-fi-note').textContent = `${S.ret}% return · ${S.wr}% withdrawal`;
   const empty = !(P.fiT > 0) || P.pts.length < 2;
   wrap.classList.toggle('empty', empty);
+  // What FI is and where the number comes from, in the user's own figures.
+  what.innerHTML = P.fiT > 0 ? `<b>FI</b> (financial independence) is when your investments could pay for your life for good. Yours is <b>${kmoney(P.fiT)}</b>: a year of bills and spending (${money0(P.costM * 12)}) ÷ the ${S.wr}% you could safely take out each year. The green line is your investments growing, at ${S.ret}% a year after inflation, until they reach it.`
+    : '<b>FI</b> (financial independence) is when your investments could pay for your life for good.';
   if (empty) { wrap.innerHTML = `<p class="muted small">${P.none ? 'Stack your first pay to see the path.' : 'Add your bills to set your FI number.'}</p>`; xl.innerHTML = ''; lg.innerHTML = ''; return; }
   const ends = [P.fi, PLf && PLf.fi].filter(v => v !== null && v !== undefined);
   const hz = ends.length ? Math.min(600, Math.max(24, Math.ceil(Math.max(...ends) * 1.15 / 12) * 12)) : 480;
@@ -63,15 +75,18 @@ function renderFI(P, PLf, est, nm) {
     const x = X(P.fi) / 10, yp = (fy / 4).toFixed(2);
     h += `<span class="fi-dot" style="left:${x.toFixed(2)}%;top:${yp}%"></span><span class="fi-dl${x > 80 ? ' right' : ''}" style="left:${x.toFixed(2)}%;top:${yp}%">${monthYear(dateIn(P.fi))}</span>`;
   }
-  // The milestones on the way, as dots on the line, coloured like the list below.
-  const ms = [{ m: P.emFull, c: 'var(--c-save)' }, { m: P.debtFree, c: 'var(--c-debt)' }, { m: P.zero, c: 'var(--bad)' }].filter(x => x.m && x.m > 0 && x.m <= hz && Math.round(x.m) < pts.length);
+  // The milestones on the way, as dots on the line, named in the key below.
+  const ms = FI_MS.map(([k, c, n]) => ({ m: P[k], c, n })).filter(x => x.m && x.m > 0 && x.m <= hz && Math.round(x.m) < pts.length);
   ms.forEach(x => { h += `<span class="fi-dot sm" style="left:${(X(x.m) / 10).toFixed(2)}%;top:${(Y(pts[Math.round(x.m)].inv) / 4).toFixed(2)}%;background:${x.c}"></span>`; });
   wrap.innerHTML = h;
   const yrs = hz / 12, step = yrs > 30 ? 10 : yrs > 12 ? 5 : yrs > 6 ? 2 : 1;
   let xs = '<span style="left:0">Now</span>';
   for (let y = step; y < yrs - step * 0.4; y += step) xs += `<span style="left:${(y / yrs * 100).toFixed(2)}%;transform:translateX(-50%)">${y}y</span>`;
   xl.innerHTML = xs;
-  lg.innerHTML = `<span><i></i>On ${esc(nm)}</span>` + (PLf ? '<span><i class="plan"></i>At your pace</span>' : '');
+  lg.innerHTML = `<span><i></i>Investments on ${esc(nm)}, if every pay goes like it</span>` + (PLf ? '<span><i class="plan"></i>At your pace: how your pays have actually gone</span>' : '')
+    + `<span><i class="fi-n"></i>Your FI number, ${kmoney(P.fiT)}</span>`
+    + (P.fi && P.fi <= hz ? `<span><i class="dot" style="background:var(--c-invest)"></i>FI · ${monthYear(dateIn(P.fi))}</span>` : '')
+    + ms.map(x => `<span><i class="dot" style="background:${x.c}"></i>${x.n} · ${monthYear(dateIn(x.m))}</span>`).join('');
 }
 /* Before your first pay, Plan works on a pretend pay you can set, so there's something to compare. Home stays real. */
 const noPays = () => !app.S.moves.some(m => m.type === 'pay');
@@ -113,11 +128,11 @@ function renderPlan(D, est) {
       BK.forEach(k => { $('#pm-' + k).textContent = money(v[k]); });
     } else BK.forEach(k => { $('#pm-' + k).textContent = ''; });
     $('#p-crem').textContent = a ? `${money(a.plan.rem)} after bills and repayments` : '';
-    const tot = sumPct(S), diff = tot - 100, pill = $('#p-total'), btns = $('#p-btns');
-    pill.hidden = diff === 0;
-    pill.className = 'pill ' + (diff > 0 ? 'bad' : 'warn');
-    pill.textContent = tot === 0 ? 'Not set yet.' : diff > 0 ? `Over by ${diff}%` : `${-diff}% unassigned`;
-    btns.innerHTML = diff !== 0 && tot > 0 ? '<button class="btn" type="button" data-act="balance">Balance to 100%</button>' : '';
+    const mine = sumPct(S) > 0, tot = mine ? sumPct(S) : 100, diff = tot - 100, pill = $('#p-total'), btns = $('#p-btns');
+    pill.hidden = mine && diff === 0;
+    pill.className = 'pill ' + (!mine ? 'note' : diff > 0 ? 'bad' : 'warn');
+    pill.textContent = !mine ? 'A starting split. Move any slider to make it yours.' : diff > 0 ? `Over by ${diff}%` : `${-diff}% unassigned`;
+    btns.innerHTML = mine && diff !== 0 ? '<button class="btn" type="button" data-act="balance">Balance to 100%</button>' : '';
     btns.hidden = !btns.children.length;
     btns.style.gridTemplateColumns = '1fr';
   }

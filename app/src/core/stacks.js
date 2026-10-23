@@ -179,6 +179,27 @@ export function stackItems(S, stk, ex) {
 /* The pay you're in stays live: change a bill, a debt or your plan and it re-stacks. Past pays stay as they were.
    A pay on your plan follows your plan; a pay stacked on another plan just for itself keeps the split it got. */
 /** @param {PayStack} s */
+/** @typedef {{ debt: number, saved: number, pot: number, invested: number, total: number, planned: number }} Stacked */
+/**
+ * What a pay put towards your progress: repayments, the Buffer, Savings and investing, paid from the pay itself. Money moved
+ * between your own accounts, money from somewhere else and the everyday card's spending money don't count: a top-up only
+ * counts past the spending money it loads. planned: what the pay's plan puts there.
+ * @param {State} S @param {PayStack} stk @returns {Stacked}
+ */
+export function stackedBy(S, stk) {
+  const I = stackItems(S, stk), w = walletCard(S), out = { debt: 0, saved: 0, pot: 0, invested: 0, total: 0, planned: 0 };
+  let toCard = 0;
+  for (const m of S.moves) {
+    if (!I.inP(m) || !ownMove(m) || m.from === 'card') continue;
+    if (m.type === 'saved' || m.type === 'pot' || m.type === 'invested') out[m.type] += m.amount;
+    else if (m.type === 'debt') { if (w && m.ref === w.id) toCard += m.amount; else out.debt += m.amount; }
+  }
+  const tu = w ? I.todos.find(i => i.key === 'debt:' + w.id) : null, onCard = w ? stk.plan.debts[w.id] || 0 : 0;
+  out.debt += Math.max(0, toCard - (tu ? Math.max(0, tu.plan - onCard) : 0));
+  out.planned = I.todos.reduce((t, i) => t + (i === tu ? Math.min(i.plan, onCard) : i.plan), 0);
+  out.total = out.debt + out.saved + out.pot + out.invested;
+  return out;
+}
 export const stackPct = s => s.one && s.pct ? s.pct : undefined;
 /** Re-stack the pay you're in. true when it changed (so it needs saving). @param {State} S */
 export function restack(S) {

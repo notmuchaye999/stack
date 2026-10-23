@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { makeStack, stackItems, didAll, stackPay, latestStack, restack, leftover, habit } from '../app/src/core/stacks.js';
+import { makeStack, stackItems, stackedBy, didAll, stackPay, latestStack, restack, leftover, habit } from '../app/src/core/stacks.js';
 import { monthly } from '../app/src/core/balances.js';
 import { specOf } from '../app/src/core/plans.js';
 import { moveRecs } from '../app/src/core/accounts.js';
@@ -136,5 +136,29 @@ describe('the everyday card', () => {
     S.moves.push(spend('2026-10-01', 100));
     expect(leftover(S, '2026-10-14')).toBe(Math.round(s.plan.card + stackItems(S, s).viaLeft - 100));
     expect(leftover(mk(), '2026-10-14')).toBe(0);
+  });
+});
+
+describe('your stack: what each pay put towards progress', () => {
+  it('counts repayments, Buffer, Savings and investing from the pay, against what its plan puts there', () => {
+    const S = setup(); stackPay(S, 2000, '2026-10-14');
+    const stk = latestStack(S);
+    expect(stackedBy(S, stk)).toMatchObject({ total: 0, planned: 400 + 150 + 300 });
+    S.moves.push(move('debt', '2026-10-14', 400, { ref: 'card' }), move('saved', '2026-10-15', 150), move('invested', '2026-10-15', 100));
+    expect(stackedBy(S, stk)).toMatchObject({ debt: 400, saved: 150, invested: 100, pot: 0, total: 650 });
+  });
+  it("leaves out moves between your own accounts, money from elsewhere, and other pays' entries", () => {
+    const S = setup(); stackPay(S, 2000, '2026-10-01'); stackPay(S, 2000, '2026-10-14');
+    S.moves.push(move('debt', '2026-10-14', 200, { ref: 'card', from: 'buffer' }), move('saved', '2026-10-14', 50, { from: 'ext' }), move('invested', '2026-10-05', 80));
+    expect(stackedBy(S, latestStack(S)).total).toBe(0);
+    expect(stackedBy(S, S.stacks.find(s => s.date === '2026-10-01')).invested).toBe(80);
+  });
+  it("doesn't count the everyday card's spending money, only what goes past it", () => {
+    const S = setup({ debts: [debt({ id: 'w', name: 'Card', card: true, wallet: true, limit: 1000, balance: 0 })] }); stackPay(S, 2000, '2026-10-14');
+    const stk = latestStack(S), tu = stackItems(S, stk).todos.find(i => i.key === 'debt:w');
+    S.moves.push(move('debt', '2026-10-14', tu.plan, { ref: 'w' }));
+    expect(stackedBy(S, stk).debt).toBe(0);
+    S.moves.push(move('debt', '2026-10-15', 60, { ref: 'w' }));
+    expect(stackedBy(S, stk).debt).toBe(60);
   });
 });

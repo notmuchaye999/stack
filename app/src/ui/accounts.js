@@ -45,7 +45,7 @@ export function renderSaved(D) {
 
 /* ---------- account names ---------- */
 export function nameField(k) { const f = $('#f-aname'); if (f) f.onchange = () => { const S = app.S; S.names = Object.assign({}, S.names); const v = f.value.trim(); if (v) S.names[k] = v; else delete S.names[k]; save(); renderAll(); }; }
-export const nameRow = k => `<div><label class="lbl" for="f-aname">Name in your bank</label><div class="field"><input id="f-aname" type="text" maxlength="24" value="${esc(nameOf(app.S, k))}"></div></div>`;
+export const nameRow = k => `<div><label class="lbl" for="f-aname">${k === 'inv' ? 'Name, like your broker or wallet' : 'Name in your bank'}</label><div class="field"><input id="f-aname" type="text" maxlength="24" value="${esc(nameOf(app.S, k))}"></div></div>`;
 
 /* ---------- the pay account ---------- */
 export function payAcctSheet() {
@@ -67,7 +67,7 @@ export function entriesSheet(k) {
   const ms = sortMoves(S.moves.filter(m => buf ? m.type === 'saved' || (m.type === 'spend' && m.from === 'buffer') || xo('buffer')(m) : pool ? m.type === 'pot' || poolOut(m) || xo('pool')(m) : m.type === 'invested' || m.type === 'mkt' || xo('inv')(m)));
   const sub = buf ? `Emergency money. ${S.emMonths} months of bills and repayments.` : pool ? (target > 0 ? 'For purchases. The target covers your whole list.' : 'For purchases. They unlock as it grows.')
     : target > 0 ? `FI number ${kmoney(target)}. At ${S.wr}% a year it covers your bills and spending.` : 'Your FI number shows after your first pay.';
-  const how = buf || pool ? 'Type what your bank shows. The change is recorded: money in raises your rank, money out lowers it.' : 'Type what it\'s worth. What you put in and what the market does both move your rank.';
+  const how = buf || pool ? 'Type what your bank shows. The change is recorded: money in raises your rank, money out lowers it.' : 'Shares, ETFs or crypto: type what it\'s all worth in dollars, the total your app or wallet shows. What you put in and what the market does both move your rank.';
   openSheet(esc(nameOf(S, buf ? 'buffer' : pool ? 'pool' : 'inv')), `<div class="form"><div><p class="sum-big" style="margin:0">${money(v)}${target > 0 ? `<small> of ${buf ? money0(target) : pool ? money(target) : kmoney(target)}</small>` : ''}</p>
       <div class="bar thin"><span style="width:${(target > 0 ? clamp(v / target) : 0) * 100}%;background:var(${buf ? '--c-save' : pool ? '--c-buy' : '--c-invest'})"></span></div>
       <p class="muted small">${sub}</p></div>

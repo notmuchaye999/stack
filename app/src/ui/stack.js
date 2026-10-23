@@ -1,6 +1,6 @@
 /* The Stack tab: this pay as it stands (what's free, what's still due, what your plan suggests, what's done), your
    spending habit, and past pays. A new pay is stacked on the pay screen (payview.js). */
-import { today, fmtDate, money, money0, sortMoves, latestStack, stackItems, payNow, habit, budgetStreak, nameOf, walletCard,
+import { today, fmtDate, money, money0, sortMoves, latestStack, stackItems, stackedBy, payNow, habit, budgetStreak, nameOf, walletCard,
   cardBudget, potTotal, debtName, heldSum, PLAN_N } from '../core/index.js';
 import { app, ui } from './store.js';
 import { $, esc, CHEV, TICK, BM, tone } from './dom.js';
@@ -63,6 +63,30 @@ function payNowHTML(stk, own) {
     ${sugs ? `<div class="sec-h"><h3>Suggested</h3><span>${esc(PLAN_N[stk.pk] || 'Custom')}</span></div><div class="stack down">${sugs}</div>` : ''}
     ${done ? `<div class="sec-h"><h3>Done</h3></div><div class="grouped">${done}</div>` : ''}`;
 }
+/* Your stack: each pay is a block, newest on top, as wide as what it put towards your progress and coloured by where it
+   went. This pay sits in the outline of what its plan puts there, and fills it as you tick things off. Tap one for the pay. */
+const TW = [['debt', 'var(--c-debt)', 'Debt paid'], ['saved', BM.save.color, 'Buffer'], ['pot', 'var(--c-buy)', 'Savings'], ['invested', BM.invest.color, 'Invested']];
+const TW_MAX = 8;
+function towerHTML(cur) {
+  const S = app.S, rows = [...S.stacks].sort((a, b) => a.date.localeCompare(b.date) || a.t - b.t).map(s => ({ s, v: stackedBy(S, s) }));
+  if (!rows.length) return '';
+  const top = Math.max(1, ...rows.map(r => Math.max(r.v.total, r.s === cur ? r.v.planned : 0))), sum = rows.reduce((t, r) => t + r.v.total, 0);
+  const pct = v => (v > 0.5 ? Math.max(4, v / top * 100) : 0).toFixed(2) + '%';
+  const blocks = rows.slice(-TW_MAX).reverse().map(({ s, v }) => {
+    const now = s === cur, pm = S.moves.find(m => m.type === 'pay' && m.stack === s.id), segs = TW.filter(([k]) => v[k] > 0.5);
+    const block = segs.length ? `<span class="tw-b" style="width:${(v.total / Math.max(v.total, now ? v.planned : 0) * 100).toFixed(2)}%">${segs.map(([k, c]) => `<i style="flex:${v[k].toFixed(2)};background:${c}"></i>`).join('')}</span>` : '';
+    const shell = now && v.planned > v.total + 0.5 ? `<span class="tw-o" style="width:${pct(v.planned)}">${block}</span>` : block ? `<span class="tw-o solid" style="width:${pct(v.total)}">${block}</span>` : '<span class="tw-o none"></span>';
+    const lbl = `${fmtDate(s.date)}: ${money(v.total)} towards progress${now ? ` of ${money(v.planned)} planned` : ''}`;
+    const inner = `<span class="tw-d">${now ? 'This pay' : fmtDate(s.date)}</span><span class="tw-m">${shell}</span><span class="num">${v.total > 0.5 ? '+' + money0(v.total) : '–'}</span>`;
+    return pm ? `<button class="tw-r${now ? ' now' : ''}" type="button" data-act="pay" data-id="${pm.id}" aria-label="${lbl}">${inner}</button>` : `<div class="tw-r${now ? ' now' : ''}" aria-label="${lbl}">${inner}</div>`;
+  }).join('');
+  const cv = rows.find(r => r.s === cur), more = rows.length - TW_MAX;
+  return `<div class="sec-h"><h3>Your stack</h3><span>${money0(sum)} in ${rows.length === 1 ? '1 pay' : rows.length + ' pays'}</span></div>
+    <div class="card tower">${blocks}<span class="tw-ground" aria-hidden="true"></span>
+      ${more > 0 ? `<p class="tw-more">${more} earlier ${more === 1 ? 'pay' : 'pays'} below</p>` : ''}
+      <p class="tw-note">${cv && cv.v.planned > 0.5 ? `This pay: ${money0(cv.v.total)} of ${money0(cv.v.planned)} stacked so far. ` : ''}Each block is what a pay put towards debt, your Buffer, Savings and investing.</p>
+      <div class="tw-key">${TW.map(([, c, n]) => `<span><i style="background:${c}"></i>${n}</span>`).join('')}</div></div>`;
+}
 export function renderStack() {
   const S = app.S, stk = latestStack(S), list = stk && !ui.stackNew;
   $('#stk-list').hidden = !list; $('#stk-new').hidden = list;
@@ -73,6 +97,7 @@ export function renderStack() {
     const hbars = hb ? hb.ps.map((o, k) => { const r = rs[k], ov = o.I.left < -0.5; return `<span class="hb${ov ? ' over' : ''}" title="${fmtDate(o.x.date)}: ${money(o.I.spent)} of ${money(o.I.budget)}"><i style="height:${(r / top * 100).toFixed(1)}%${ov ? `;--b:${(r > 1 ? 100 / r : 0).toFixed(1)}%` : ''}"></i></span>`; }).join('') + `<b class="hb-line" style="bottom:${(100 / top).toFixed(1)}%" aria-hidden="true"></b>` : '';
     $('#stk-list').innerHTML = `<header class="tab-h row-h"><div><h1 class="large">This pay</h1></div><button class="link new-pay" type="button" data-act="stack-new">New pay</button></header>
       ${payNowHTML(stk, own)}
+      ${towerHTML(stk)}
       ${hb ? `<div class="sec-h"><h3>Spending habit</h3>${st ? `<span>${st} on budget in a row</span>` : ''}</div><div class="card">
         <p class="habit-l">Last ${hb.n === 1 ? 'pay' : hb.n + ' pays'}: ${hb.n > 1 ? 'average ' : ''}<b>${money0(hb.spent)}</b> spent · ${money0(hb.budget)} budget</p><div class="hbars">${hbars}</div></div>` : ''}
       ${past ? `<div class="grouped"><button class="row" type="button" data-act="past-pays"><span class="grow"><b>Past pays</b></span><span class="num">${past}</span>${CHEV}</button></div>` : ''}`;

@@ -92,7 +92,7 @@ export function spentSheet(o = {}) {
   const paintItems = () => {
     const el = $('#sp-items'), bs = openBuys(S), U = unlocks(S), open = id => (U.items.find(x => x.b.id === id) || {}).open;
     el.hidden = !bs.length; // one row that keeps its place while you switch where it came from
-    const chips = (lbl, attr, on, lock) => `<div class="sp-row"><span class="lbl">${lbl}</span><div class="pick buy-pick">${bs.map(b => `<button type="button" ${attr}="${b.id}" aria-pressed="${on(b.id)}">${esc(b.name)}${lock && !open(b.id) ? LOCK : ''}</button>`).join('')}</div></div>`;
+    const chips = (lbl, attr, on, lock) => `<div class="sp-chips"><span class="lbl">${lbl}</span><div class="pick buy-pick">${bs.map(b => `<button type="button" ${attr}="${b.id}" aria-pressed="${on(b.id)}">${esc(b.name)}${lock && !open(b.id) ? LOCK : ''}</button>`).join('')}</div></div>`;
     el.innerHTML = savOn() ? chips('Which one?', 'data-pot', id => st.from === 'pot:' + id, true)
       : !itemsOn() ? '' : st.list || st.items.size ? chips('On your list?', 'data-item', id => st.items.has(id), false)
       : '<button class="link sm sp-list" type="button" data-list>Something on your list? ›</button>';
