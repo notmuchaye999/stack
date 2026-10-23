@@ -63,6 +63,7 @@ const FILES = [
   'src/ui/spent.js',
   'src/ui/stack.js',
   'src/ui/store.js',
+  'src/ui/viewport.js',
   'styles.css',
 ];
 

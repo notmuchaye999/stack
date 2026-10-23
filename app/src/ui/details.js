@@ -2,7 +2,7 @@
 import { addDays, fmtDate, money, sortMoves, debtName, impactOf, impShort, latestStack, stackItems, makeStack, ruleOf, myPlan,
   preSettle, settleRank, didAll, PLAN_N } from '../core/index.js';
 import { app, ui, save } from './store.js';
-import { $, esc, TY, impCls, toast, twoTap } from './dom.js';
+import { $, esc, TY, impCls, toast, twoTap, toTop } from './dom.js';
 import { openSheet, closeSheet } from './sheet.js';
 import { rowsOf } from './lists.js';
 import { renderAll, commit, go } from './render.js';
@@ -41,7 +41,7 @@ export function payDetail(id) {
     $('#f-stack').onclick = () => {
       if (!S.plan) S.plan = 'debt';
       const pre = preSettle(S), s = makeStack(S, m.amount, m.date); s.pk = ruleOf(S, myPlan(S)); S.stacks.push(s); m.stack = s.id; ui.stackNew = false;
-      const R = settleRank(S, pre); save(); closeSheet(); renderAll(); window.scrollTo(0, 0);
+      const R = settleRank(S, pre); save(); closeSheet(); renderAll(); toTop();
       if (R) showSettle(R, () => toast('Stacked. Now make it real')); else toast('Stacked. Now make it real');
     };
   } else {
@@ -51,7 +51,7 @@ export function payDetail(id) {
       <div><p class="lbl">What happened</p><div class="grouped">${rowsOf(ms, 'Nothing recorded in this pay.')}</div></div>
       <div><p class="lbl">The plan it was stacked on</p>${receiptHTML(stk)}</div>
       <button class="btn wide danger" id="f-del" type="button" style="margin-top:0">Delete pay</button></div>`);
-    if (cur) $('#f-open').onclick = () => { closeSheet(); go('stack'); window.scrollTo(0, 0); };
+    if (cur) $('#f-open').onclick = () => { closeSheet(); go('stack'); toTop(); };
   }
   twoTap($('#f-del'), 'Tap again to delete', () => { const S = app.S; S.moves = S.moves.filter(x => x.id !== id); if (stk) S.stacks = S.stacks.filter(s => s.id !== stk.id); commit('Pay deleted'); });
 }

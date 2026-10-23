@@ -3,7 +3,7 @@
 import { BK, today, money, money0, monthYear, heldOf, heldSum, nameOf, payPlans, pvSel, owes, PLANS, planName, cardBudget, potTotal,
   customPct, evalPlan, dateIn, stackPay, pvMore, preSettle, settleRank, tierName } from '../core/index.js';
 import { app, ui, save } from './store.js';
-import { $, esc, BM, toast } from './dom.js';
+import { $, esc, BM, toast, toTop } from './dom.js';
 import { openSheet, closeSheet, keypad, showStr } from './sheet.js';
 import { receiptHTML } from './stack.js';
 import { renderAll, undoOf } from './render.js';
@@ -100,7 +100,7 @@ function pvStack() {
   ui.stackNew = false; pvReset();
   const R = settleRank(S, pre); save();
   if (!$('#qs').hidden) closeQS(); else renderAll();
-  window.scrollTo(0, 0);
+  toTop();
   const msg = mine ? `Stacked. ${sel.name} is your plan now` : yours ? 'Stacked' : `Stacked on ${sel.name}, just this pay`;
   if (R) showSettle(R, () => toast(msg, undoOf(s0)));
   else toast(`${msg}. You're ${tierName(S.rank.nw)}: your rank settles each pay day`, undoOf(s0));

@@ -3,7 +3,7 @@ import { today, normalize, hasData, latestStack, stackItems, payNow, walletCard,
   todoTo, tickBill, planName, PLANS, money, sortMoves } from '../core/index.js';
 import { loadState, onStorageProblem, askToKeep } from '../storage.js';
 import { app, ui, save } from './store.js';
-import { $, esc, toast, runUndo } from './dom.js';
+import { $, esc, toast, runUndo, page, toTop } from './dom.js';
 import { openSheet, closeSheet, sheetBack, swipeable, numpad, closePad, padDone, padIn, padRestore, padSt, press } from './sheet.js';
 import { renderAll, go, undoOf } from './render.js';
 import { NF, buildSplit, fillSplit, fillPlanInputs, balance, usePlan } from './plan.js';
@@ -17,6 +17,7 @@ import { moveDetail, payDetail, didAllUI } from './details.js';
 import { paySpendsSheet, pastPaysSheet } from './stack.js';
 import { entriesSheet, payAcctSheet, updateBal } from './accounts.js';
 import { showSettle } from './rank.js';
+import { watchViewport } from './viewport.js';
 import { settingsSheet, testOn, testEnd, testEndSheet, trySample, clearAsk, clearAll, backup, restoreSheet, checkBackup } from './settings.js';
 
 /* ---------- typing and keys ---------- */
@@ -46,6 +47,8 @@ $('#scrim').addEventListener('click', sheetBack);
 $('#pad-scrim').addEventListener('click', closePad);
 swipeable($('#sheet'), $('#scrim'), sheetBack); swipeable($('#pad'), $('#pad-scrim'), closePad);
 document.addEventListener('touchstart', () => {}, { passive: true }); // lets :active press states show on iPhone
+watchViewport(); // keeps the tab bar and sheets on screen if the iPhone shifts the page
+page().addEventListener('scroll', () => document.body.classList.toggle('scrolled', page().scrollTop > 4), { passive: true });
 $('#qs').addEventListener('click', qsClick);
 $('#bk-file').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0]; e.target.value = '';
@@ -84,7 +87,7 @@ document.addEventListener('click', e => {
     case 'spent': spentSheet(); break;
     case 'credit': creditSheet(id); break;
     case 'credit-add': creditForm(); break;
-    case 'pass': go('home'); window.scrollTo(0, 0); break;
+    case 'pass': go('home'); toTop(); break;
     case 'settle-last': { const R = (S.settles || [])[(S.settles || []).length - 1]; if (R) showSettle(R); break; }
     case 'goal': goalSheet(id); break;
     case 'goal-add': goalSheet(); break;
@@ -173,8 +176,8 @@ document.addEventListener('click', e => {
       const s0 = JSON.stringify(S), on = tickBill(S, id, a.dataset.d); save(); renderAll(); toast(on ? `${b.name} ticked off` : `${b.name} unticked`, undoOf(s0));
       break;
     }
-    case 'stack-new': ui.stackNew = true; pvReset(); renderAll(); window.scrollTo(0, 0); break;
-    case 'stack-cancel': ui.stackNew = false; pvReset(); renderAll(); window.scrollTo(0, 0); break;
+    case 'stack-new': ui.stackNew = true; pvReset(); renderAll(); toTop(); break;
+    case 'stack-cancel': ui.stackNew = false; pvReset(); renderAll(); toTop(); break;
     case 'sample': trySample(); break;
     case 'clear-ask': clearAsk(); break;
     case 'clear-yes': clearAll(); break;

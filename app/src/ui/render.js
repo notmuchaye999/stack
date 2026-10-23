@@ -1,7 +1,7 @@
 /* Redrawing after anything changes, moving between tabs, and Undo. Only the screen you're on gets drawn. */
 import { restack, derive, normalize, latestStack, daysBetween, today, periodDays, money, money0, touch } from '../core/index.js';
 import { app, ui, save } from './store.js';
-import { $, toast, toastQ, tg } from './dom.js';
+import { $, toast, toastQ, tg, page, toTop } from './dom.js';
 import { closeSheet } from './sheet.js';
 import { renderHome } from './home.js';
 import { renderSaved } from './accounts.js';
@@ -39,13 +39,13 @@ export function go(tab) {
   if (tab === 'spent') tab = 'stack';
   if (tab === 'stack' && !S.bills.length && !S.debts.length && !S.moves.length) { openQS(); return; }
   if (tab === 'stack') { const s = latestStack(S); ui.stackNew = !s || daysBetween(s.date, today()) >= periodDays(S); }
-  const prev = ui.tab; ui.sc[prev] = window.scrollY;
+  const prev = ui.tab; ui.sc[prev] = page().scrollTop;
   ui.tab = tab; document.body.dataset.tab = tab;
   ['home', 'saved', 'stack', 'bills', 'plan'].forEach(t => { $('#tab-' + t).hidden = t !== tab; });
   document.querySelectorAll('.tabbar [data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === tab ? 'page' : 'false'));
   if (tab === 'stack' && ui.stackNew) pvReset();
   if (tab === 'plan') fillPlanInputs();
-  renderAll(); window.scrollTo(0, tab === prev ? 0 : ui.sc[tab] || 0);
+  renderAll(); toTop(tab === prev ? 0 : ui.sc[tab] || 0);
 }
 
 /* Motion: a number or bar that changed since it was last on screen counts or slides to its new value, then lands on

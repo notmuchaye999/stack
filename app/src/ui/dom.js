@@ -3,6 +3,9 @@ import { impTxt, TYPE_NAMES } from '../core/index.js';
 import { app } from './store.js';
 
 export const $ = s => document.querySelector(s);
+/** The page scrolls inside #scroll, not the window (see .scroll in styles.css). */
+export const page = () => /** @type {HTMLElement} */ ($('#scroll'));
+export const toTop = (y = 0) => { const p = page(); if (p) p.scrollTop = y; };
 export const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /* ---------- icons ---------- */

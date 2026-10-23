@@ -1,9 +1,14 @@
 /* Stack's styles, copied from the prototype (prototype/stack.html). Colours live in the :root tokens below,
    redefined for dark mode. The first block is what the claude.ai page wrapper added around the prototype,
    kept so the app sits on the phone exactly the same way. The Hubble deep field is in img/, one per theme. */
-:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{color-scheme:light;box-sizing:border-box}
 body{margin:0;padding:0}
+/* The page itself never scrolls: Stack scrolls inside #scroll, like a native app. When the whole page scrolls, the iPhone
+   can leave it out of line with the screen after a swipe, and the tab bar and sheets end up partway up it. */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+/* A quick second tap is a second tap, never a zoom. Pinching still zooms. */
+.scroll,.tabbar,.sheet,.qs,.st-ov,.test-bar,.toast{touch-action:manipulation}
+.scroll{position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));overflow:hidden auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scroll-padding-top:env(safe-area-inset-top,0px)}
 img{max-width:100%}
 
 /* Fonts, stored with the app so they work offline (SIL Open Font License, see fonts/OFL-*.txt). */
@@ -183,12 +188,16 @@ img{max-width:100%}
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+/* Things pinned to the screen add --vv-t / --vv-b, set when the iPhone leaves the page out of line with it (src/ui/viewport.js). */
 /* Deep field (NASA/ESA Hubble) behind everything: stars through the dark theme, faint paper flecks in the light one. */
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--sky) center/cover no-repeat}
+body::before{content:"";position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));z-index:-1;pointer-events:none;background:var(--sky) center/cover no-repeat}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:14px calc(110px + env(safe-area-inset-bottom,0px))}
+.app{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(110px + env(safe-area-inset-bottom,0px))}
+/* Behind the clock and battery: clear at the top of a page, a frosted strip once it scrolls under them. */
+body::after{content:"";position:fixed;left:0;right:0;top:var(--vv-t,0px);height:env(safe-area-inset-top,0px);z-index:16;pointer-events:none;background:var(--bar);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);opacity:0;transition:opacity .2s}
+body.scrolled::after{opacity:1}
 .tab{display:grid;gap:14px}
 .large{font-family:var(--f-display);font-stretch:125%;font-weight:800;font-size:28px;line-height:1.1;margin:6px 0 2px;text-wrap:balance}
 .eyebrow{font-family:var(--f-display);font-stretch:125%;font-weight:800;font-size:13px;color:var(--muted);margin:0}
@@ -339,7 +348,7 @@ button.pace{display:block;width:100%;border:0;text-align:left;cursor:pointer;fon
 .pick button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 11px;font-size:13px;font-weight:500;cursor:pointer}
 .pick button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 /* tab bar */
-.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--bar);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+.tabbar{position:fixed;left:0;right:0;bottom:calc(-1 * var(--vv-b,0px));background:var(--bar);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
 .tabbar-in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
 .tabbar button{border:0;background:none;display:grid;justify-items:center;gap:2px;padding:7px 0 8px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer}
 .tabbar svg.ti{width:44px;height:28px;padding:3px 10px;border-radius:9px}
@@ -348,8 +357,8 @@ button.pace{display:block;width:100%;border:0;text-align:left;cursor:pointer;fon
 .tb-mid .ic{width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
 .tb-mid .ic svg{width:22px;height:22px}
 /* sheet */
-.scrim{position:fixed;inset:0;background:var(--scrim);z-index:30}
-.sheet{position:fixed;left:0;right:0;bottom:0;margin-inline:auto;max-width:480px;max-height:90%;overflow-y:auto;background:var(--surface);border-radius:14px 14px 0 0;padding:6px 16px calc(22px + env(safe-area-inset-bottom,0px));z-index:31;transform:translateY(100%);transition:transform .22s ease}
+.scrim{position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));background:var(--scrim);z-index:30}
+.sheet{position:fixed;left:0;right:0;bottom:calc(-1 * var(--vv-b,0px));margin-inline:auto;max-width:480px;max-height:90%;overflow-y:auto;background:var(--surface);border-radius:14px 14px 0 0;padding:6px 16px calc(22px + env(safe-area-inset-bottom,0px));z-index:31;transform:translateY(100%);transition:transform .22s ease}
 .sheet.open{transform:none}
 .sheet.pad{z-index:51}
 .scrim.pad-scrim{z-index:50}
@@ -365,7 +374,7 @@ button.pace{display:block;width:100%;border:0;text-align:left;cursor:pointer;fon
 .toast{position:fixed;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translate(-50%,-10px);background:var(--ink);color:var(--surface);padding:9px 14px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:calc(100% - 32px);text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.qs{position:fixed;inset:0;z-index:25;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.qs{position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));z-index:25;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .qs-in{max-width:480px;min-height:100%;margin:0 auto;padding:calc(16px + env(safe-area-inset-top,0px)) 16px 0;display:flex;flex-direction:column;gap:14px}
 .qs-top{display:flex;justify-content:space-between;align-items:center}
 .qs-dots{display:flex;gap:6px}
@@ -373,17 +382,17 @@ button.pace{display:block;width:100%;border:0;text-align:left;cursor:pointer;fon
 .qs-dots .done{background:var(--accent);opacity:.45}
 .qs-dots .now{background:var(--accent)}
 .qs-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:auto;position:sticky;bottom:0;padding:12px 0 calc(16px + env(safe-area-inset-bottom,0px));background:var(--bg)}
-body.qs-on{overflow:hidden}
 .pv{display:grid;gap:14px}
 .pv-amt{border:0;background:none;padding:0;margin:0;cursor:pointer;text-align:left;color:inherit;font:inherit;display:block;width:100%}
 .pv-pad{display:grid;gap:10px}
 .pv-pad[hidden]{display:none}
 .pv-adjp{min-width:44px;text-align:right}
-.bk-text{width:100%;font:12px/1.4 var(--f-code);background:var(--sunk);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
-.test-bar{position:fixed;top:0;left:0;right:0;z-index:24;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 8px;background:var(--warn-bg);color:var(--warn);font-weight:600;font-size:14px}
+/* Text boxes stay at 16px or more: the iPhone zooms the whole page in when you tap a smaller one, and leaves it zoomed. */
+.bk-text{width:100%;font:16px/1.4 var(--f-code);background:var(--sunk);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
+.test-bar{position:fixed;top:var(--vv-t,0px);left:0;right:0;z-index:24;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 8px;background:var(--warn-bg);color:var(--warn);font-weight:600;font-size:14px}
 .test-bar .link{color:var(--warn);font-weight:700}
 body.test-on .app{padding-top:calc(54px + env(safe-area-inset-top,0px))}
-.lvl{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:6px;width:calc(100% + 32px);margin:-14px -16px 2px;padding:6px 16px;border-bottom:1px solid var(--line);background:var(--bar);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.lvl{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;display:flex;align-items:center;gap:6px;width:calc(100% + 32px);margin:-14px -16px 2px;padding:6px 16px;border-bottom:1px solid var(--line);background:var(--bar);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
 .lvl-in{flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--ink);font:inherit;cursor:pointer;text-align:left;padding:6px 0;min-height:44px}
 body.test-on .lvl{top:calc(38px + env(safe-area-inset-top,0px))}
 .lvl-n{font-family:var(--f-display);font-stretch:125%;font-weight:900;font-size:15px;letter-spacing:.04em;white-space:nowrap}
@@ -596,8 +605,7 @@ button.pace:active{transform:scale(.98);transition-duration:0s}
 .sheet{transition:transform .42s cubic-bezier(.32,.72,0,1),height .3s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain}
 .sheet.fit{overflow:hidden}
 .sheet.drag{transition:none}
-body.sheet-on{overflow:hidden}
-.toast{top:auto;bottom:calc(88px + env(safe-area-inset-bottom,0px));left:0;right:0;margin-inline:auto;width:max-content;transform:translateY(12px);display:flex;align-items:center;gap:14px;transition:opacity .22s,transform .3s cubic-bezier(.2,.8,.2,1)}
+.toast{top:auto;bottom:calc(88px + env(safe-area-inset-bottom,0px) - var(--vv-b,0px));left:0;right:0;margin-inline:auto;width:max-content;transform:translateY(12px);display:flex;align-items:center;gap:14px;transition:opacity .22s,transform .3s cubic-bezier(.2,.8,.2,1)}
 .toast.show{transform:none}
 .toast.show.has-undo{pointer-events:auto}
 .toast button{border:0;background:none;color:inherit;font:inherit;font-weight:700;padding:6px 2px 6px 14px;border-left:1px solid color-mix(in srgb,var(--surface) 35%,transparent);cursor:pointer}
@@ -613,10 +621,9 @@ body[data-tab="home"] .lvl{display:none}
 .h-todo .num{color:var(--muted);font-weight:500}
 @media (prefers-reduced-motion:reduce){.scrim,.btn,.row,.htodo,.toast{transition:none}}
 /* Pay day results */
-.st-ov{position:fixed;inset:0;z-index:70;background:var(--bg);overflow:hidden auto;overscroll-behavior:contain;transition:opacity .26s}
+.st-ov{position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));z-index:70;background:var(--bg);overflow:hidden auto;overscroll-behavior:contain;transition:opacity .26s}
 .st-ov.out{opacity:0;pointer-events:none}
-.st-ov::before{content:"";position:fixed;inset:0;background:var(--sky) center/cover no-repeat;opacity:var(--sky-o);filter:var(--sky-f);mix-blend-mode:var(--sky-blend);pointer-events:none}
-body.st-on{overflow:hidden}
+.st-ov::before{content:"";position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));background:var(--sky) center/cover no-repeat;opacity:var(--sky-o);filter:var(--sky-f);mix-blend-mode:var(--sky-blend);pointer-events:none}
 .st-col{position:relative;max-width:420px;min-height:100%;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column}
 .st-skip{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:8px;border:0;background:none;color:var(--muted);font:inherit;font-size:14px;padding:10px;cursor:pointer;z-index:3}
 .st-title{margin:20px 0 0;text-align:center;font-family:var(--f-display);font-stretch:125%;font-weight:900;font-size:28px;line-height:1;white-space:nowrap;opacity:0}
@@ -663,9 +670,9 @@ body.st-on{overflow:hidden}
 .st-div{height:1px;background:var(--line);transform-origin:left;margin:8px 0 6px;opacity:0}
 .st-kbig{display:flex;justify-content:space-between;align-items:center;min-height:56px;opacity:0}
 .st-kbig b{font-family:var(--f-display);font-stretch:125%;font-weight:900;font-size:38px;font-variant-numeric:tabular-nums;transform-origin:right top;display:inline-block}
-.st-parts{position:fixed;inset:0;pointer-events:none;z-index:4}
+.st-parts{position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));pointer-events:none;z-index:4}
 .st-parts i{position:absolute;left:0;top:0;border-radius:2px;opacity:0}
-.st-flash{position:fixed;inset:0;background:#fff;pointer-events:none;opacity:0;z-index:5}
+.st-flash{position:fixed;inset:var(--vv-t,0px) 0 calc(-1 * var(--vv-b,0px));background:#fff;pointer-events:none;opacity:0;z-index:5}
 /* A toast only takes the tap on its Undo button; taps anywhere else go through to the screen under it. */
 .toast.show.has-undo{pointer-events:none}
 .toast.show.has-undo button{pointer-events:auto}
@@ -677,7 +684,7 @@ body.st-on{overflow:hidden}
 .lvl-to .lk-i{vertical-align:-1px;margin-right:2px}
 
 /* Round: a crisp sheet, the toast clear of it, and the live pay. */
-body.sheet-on .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px));transform:translateY(-12px)}
+body.sheet-on .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px) + var(--vv-t,0px));transform:translateY(-12px)}
 body.sheet-on .toast.show{transform:none}
 .mv-deck{display:grid;height:240px}
 .mv-deck > *{grid-area:1/1;transition:opacity .16s ease,visibility .16s}
@@ -858,4 +865,4 @@ button.row.pn-d{cursor:pointer}
 .shield.full i{box-shadow:0 0 12px color-mix(in srgb,var(--c) 55%,transparent)}
 
 /* Added for the installed app: the "Update ready" button (looks like a toast, but tappable). */
-.update{white-space:nowrap;pointer-events:auto;border:0;font:inherit;font-size:14px;font-weight:500;cursor:pointer;bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+.update{white-space:nowrap;pointer-events:auto;border:0;font:inherit;font-size:14px;font-weight:500;cursor:pointer;bottom:calc(140px + env(safe-area-inset-bottom,0px) - var(--vv-b,0px))}
